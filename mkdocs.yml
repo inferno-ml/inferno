@@ -1,0 +1,145 @@
+site_name: Inferno
+site_description: Blazingly fast Bayesian deep learning in PyTorch.
+repo_name: inferno
+repo_url: https://github.com/inferno-dl/inferno-torch
+
+nav:
+  - Getting Started: index.md
+  - Examples:
+      - Classification: examples/classification.md
+  - API Reference:
+      - <code class="doc-symbol doc-symbol-heading">bnn</code>:
+          - Modules: api/bnn/modules.md
+          - Temperature Scaling: api/bnn/temperature_scaling.md
+          - <code class="doc-symbol doc-symbol-heading">bnn.params</code>:
+              - Parameters: api/bnn/bnn.params/parameters.md
+              - Parametrizations: api/bnn/bnn.params/parametrizations.md
+      - <code class="doc-symbol doc-symbol-heading">datasets</code>: api/datasets.md
+      - <code class="doc-symbol doc-symbol-heading">loss_fns</code>: api/loss_fns.md
+      - <code class="doc-symbol doc-symbol-heading">models</code>: api/models.md
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/logo/logo_text_white.svg
+  favicon: assets/logo/favicon/favicon.ico
+
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.indexes
+    - navigation.tracking
+    - content.code.annotate
+    - toc.follow
+    - navigation.footer
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      primary: black
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      primary: black
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      primary: black
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [.]
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://pytorch.org/docs/stable/objects.inv
+          options: # See https://mkdocstrings.github.io/python/usage/
+            annotations_path: brief
+            docstring_style: sphinx
+            docstring_section_style: table
+            docstring_options:
+              ignore_init_summary: true
+            heading_level: 1
+            members_order: alphabetical
+            inherited_members: true
+            filters:
+              - "!^_"
+              - "!^__"
+            merge_init_into_class: true
+            parameter_headings: false
+            separate_signature: true
+            show_if_no_docstring: true
+            show_labels: false
+            show_root_heading: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            show_source: false
+            show_submodules: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary:
+              modules: false
+              classes: true
+              functions: true
+              attributes: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/inferno/inferno
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/inferno/
+
+extra_css:
+  - css/mkdocstrings.css
+  - css/custom.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - toc:
+      permalink: "#"
+      toc_depth: 2
+  - pymdownx.snippets
+  - pymdownx.magiclink
+  - attr_list
+  - md_in_html
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn

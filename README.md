@@ -10,10 +10,11 @@
 ---
 
 <h4 align="center">
-  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> |
-  <a href="https://probnum.readthedocs.io/en/latest/tutorials.html">Tutorials</a> |  
-  <a href="https://probnum.readthedocs.io/en/latest/api.html">API Reference</a> |
+  <a href="#installation">Installation</a> |  
+  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> 
 </h4>
+
+
 
 ## Installation
 

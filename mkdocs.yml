@@ -103,9 +103,9 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/inferno/inferno
+      link: https://github.com/inferno-dl/inferno
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/inferno/
+      link: https://pypi.org/project/inferno-torch/
 
 extra_css:
   - css/mkdocstrings.css

@@ -9,3 +9,20 @@
 
 ---
 
+<h4 align="center">
+  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> |
+  <a href="https://probnum.readthedocs.io/en/latest/tutorials.html">Tutorials</a> |  
+  <a href="https://probnum.readthedocs.io/en/latest/api.html">API Reference</a> |
+</h4>
+
+## Installation
+
+You can install Inferno via: 
+<!-- ```bash
+pip install inferno
+```
+
+Alternatively, you can install the development version from source. -->
+```bash
+pip install git+https://github.com/inferno-dl/inferno.git
+```

@@ -1,11 +1,13 @@
 import math
 
-import pytest
+from numpy import testing as npt
 import torch
+from torch import nn
+
 from inferno import bnn
 from inferno.bnn import params
-from numpy import testing as npt
-from torch import nn
+
+import pytest
 
 
 @pytest.mark.parametrize(

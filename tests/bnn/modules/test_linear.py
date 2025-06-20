@@ -3,11 +3,13 @@ import math
 
 import numpy as np
 import numpy.testing as npt
-import pytest
 import torch
+from torch import nn
+
 from inferno import bnn
 from inferno.bnn import params
-from torch import nn
+
+import pytest
 
 
 @pytest.mark.parametrize("batch_shape", [(), (1,), (3,), (4, 1, 2)])

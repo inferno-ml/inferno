@@ -23,7 +23,7 @@ dynamic = ["version"]
 dependencies = ["torch>=2.2", "torchvision>=0.20"]
 
 [project.optional-dependencies]
-style = ["black", "isort", "jaxtyping>=0.2.25"]
+style = ["black>=25.1.0", "isort>=5.13.2", "jaxtyping>=0.2.25"]
 docs = ["mkdocs-material>=9.6.11", "mkdocstrings-python>=1.16.12"]
 tests = ["pytest>=6.2.5", "pytest-cov>=3.0.0", "tox>=4.19"]
 dev = ["inferno[tests]", "inferno[docs]", "inferno[style]"]
@@ -146,7 +146,14 @@ profile = "black"
 combine_as_imports = true
 force_sort_within_sections = true
 known_testing = ["pytest", "pytest_cases"]
-
+sections = [
+    'FUTURE',
+    'STDLIB',
+    'THIRDPARTY',
+    'FIRSTPARTY',
+    'LOCALFOLDER',
+    'TESTING',
+]
 
 ################################################################################
 # Continuous Integration Configuration                                         #
@@ -183,7 +190,6 @@ commands = [
         "isort",
         { replace = "posargs", extend = true, default = [
             "{tox_root}",
-            "--profile black",
         ] },
     ],
 ]

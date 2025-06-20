@@ -1,7 +1,9 @@
-import pytest
-import torch
-from inferno.bnn import params
 from numpy import testing as npt
+import torch
+
+from inferno.bnn import params
+
+import pytest
 
 
 @pytest.mark.parametrize(

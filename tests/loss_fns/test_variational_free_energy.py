@@ -1,11 +1,12 @@
 import numpy.testing as npt
-import pytest
 import torch
 from torch import nn
 
 import inferno
 from inferno import bnn, loss_fns, models
 from inferno.bnn import params
+
+import pytest
 
 
 @pytest.mark.parametrize(

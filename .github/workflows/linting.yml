@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  format:
+  formatting-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
       - name: Install tox
         run: pip install tox
       - name: Run style checks
-        run: tox -e format -- . --check --diff
+        run: tox -e format -- inferno tests --check --diff
   # pylint:
   #   runs-on: ubuntu-latest
   #   steps:

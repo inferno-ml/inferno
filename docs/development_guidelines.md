@@ -1,0 +1,51 @@
+# Development Guidelines
+
+## Getting Started
+
+To get started with contributions to the library follow these steps:
+
+1. Fork the [repository](https://github.com/inferno-dl/inferno).
+2. Clone your fork to your machine:
+    ```sh
+    git clone git@github.com:my-username/inferno.git
+    ```
+3. Install the Python package in an editable fashion with all development dependencies (in a new virtual environment):
+    ```sh
+    cd inferno
+    pip install -e .[dev]
+    ```
+
+That's it! To make contributions to the main library simply push your changes to your fork and create a pull request on GitHub.
+
+## Continuous Integration
+
+We use ``tox`` to simplify any tasks related to continuous integration.
+
+### Running Tests
+You can run (a subset of) tests via
+```sh
+tox -e py3  -- path-to-tests
+```
+
+### Building the Documentation
+You can build the documentation and view it locally in your browser.
+
+```sh
+tox -e docs -- serve 
+```
+
+Now open a browser and enter the local address shown in your terminal.
+
+### Formatting Code
+To ensure consistent formatting throughout the library, we check for properly formatted code and imports. 
+
+To check whether your code is properly formatted run:
+
+```sh
+tox -e format -- . --check --diff
+```
+
+If you want tox to automatically format a specific folder, simply run
+```sh
+tox -e format -- folder-to-format
+```

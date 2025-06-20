@@ -1,8 +1,10 @@
-name: CI-build
+name: Continuous integration tests
 
 on:
   # Triggers the workflow on push or pull request
-  # push:
+  push:
+    branches:
+      - main
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -31,19 +33,3 @@ jobs:
         # Run tox using the version of Python in `PATH`
         run: |
           tox -e py3
-
-  documentation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install tox
-        run: pip install tox
-      - name: Install external doc tools
-        run: |
-          sudo apt-get install pandoc
-          sudo apt-get install graphviz
-      - name: Build documentation
-        run: tox -e docs

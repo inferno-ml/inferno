@@ -11,7 +11,8 @@
 
 <h4 align="center">
   <a href="#installation">Installation</a> |  
-  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> 
+  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> | 
+  <a href="https://inferno-dl.github.io/inferno/development_guidelines">Contributing</a>
 </h4>
 
 

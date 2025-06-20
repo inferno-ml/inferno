@@ -19,7 +19,7 @@ That's it! To make contributions to the main library simply push your changes to
 
 ## Continuous Integration
 
-We use ``tox`` to simplify any tasks related to continuous integration.
+We use [``tox``](https://tox.wiki) to simplify any tasks related to continuous integration.
 
 ### Running Tests
 You can run (a subset of) tests via
@@ -45,7 +45,7 @@ To check whether your code is properly formatted run:
 tox -e format -- . --check --diff
 ```
 
-If you want tox to automatically format a specific folder, simply run
+If you want ``tox`` to automatically format a specific folder, simply run
 ```sh
 tox -e format -- folder-to-format
 ```

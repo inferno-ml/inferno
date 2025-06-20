@@ -1,4 +1,0 @@
-# Dependencies for code formatting
-
-black==25.1.0
-isort>=5.10,<6

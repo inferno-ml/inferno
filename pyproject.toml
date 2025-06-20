@@ -159,3 +159,16 @@ commands = [
         ] },
     ],
 ]
+
+[tool.tox.env.docs]
+description = "Build the documentation."
+extras = ["style", "docs"]
+commands = [
+    [
+        "mkdocs",
+        { replace = "posargs", extend = true, default = [
+            "{tox_root}",
+            "build",
+        ] },
+    ],
+]

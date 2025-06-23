@@ -23,9 +23,21 @@ dynamic = ["version"]
 dependencies = ["torch>=2.2", "torchvision>=0.20"]
 
 [project.optional-dependencies]
-style = ["black>=25.1.0", "isort>=5.13.2", "jaxtyping>=0.2.25"]
-docs = ["mkdocs-material>=9.6.11", "mkdocstrings-python>=1.16.12"]
-tests = ["pytest>=6.2.5", "pytest-cov>=3.0.0", "tox>=4.19"]
+style = [
+    "black>=25.1.0",     # Code formatting
+    "isort>=5.13.2",     # Sorting imports
+    "jaxtyping>=0.2.25", # Type annotations for JAX and PyTorch
+]
+docs = [
+    "mkdocs-material>=9.6.11",      # Documentation theme
+    "mkdocstrings-python>=1.16.12", # Automatically generate API documentation
+    "markdown-exec>=1.10.3",        # Execute code blocks in markdown files
+]
+tests = [
+    "pytest>=6.2.5",     # Testing framework
+    "pytest-cov>=3.0.0", # Test coverage
+    "tox>=4.19",         # Automation for testing in multiple environments
+]
 dev = ["inferno[tests]", "inferno[docs]", "inferno[style]"]
 
 [project.urls]
@@ -72,7 +84,7 @@ include-package-data = true
 # see https://docs.pytest.org/en/stable/reference/reference.html#ini-options-ref
 
 [tool.pytest.ini_options]
-addopts = ["--verbose", "--doctest-modules"]
+addopts = ["--verbose", "--doctest-modules", "--color=yes"]
 norecursedirs = [".*", "*.egg*", "dist", "build", ".tox"]
 testpaths = ["inferno", "tests"]
 doctest_optionflags = "NUMBER NORMALIZE_WHITESPACE"
@@ -135,9 +147,8 @@ commands = [
     [
         "pytest",
         { replace = "posargs", extend = true, default = [
-            "{tox_root}{/}tests",
-            "--doctest-modules",
-            "--color=yes",
+            # "{tox_root}",
+            "--config-file=pyproject.toml", # Use pytest configuration from pyproject.toml
         ] },
     ],
 ]

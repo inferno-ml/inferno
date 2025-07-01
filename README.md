@@ -21,7 +21,7 @@
 
 You can install Inferno via: 
 <!-- ```bash
-pip install inferno
+pip install inferno-torch
 ```
 
 Alternatively, you can install the development version from source. -->

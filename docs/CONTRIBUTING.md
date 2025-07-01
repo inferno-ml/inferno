@@ -1,4 +1,4 @@
-# Development Guidelines
+# Contribution Guidelines
 
 ## Getting Started
 
@@ -15,7 +15,7 @@ To get started with contributions to the library follow these steps:
     pip install -e .[dev]
     ```
 
-That's it! To make contributions to the main library simply push your changes to your fork and create a pull request on GitHub.
+That's it! To make contributions to the main library simply push your changes to your fork on GitHub and create a pull request.
 
 ## Continuous Integration
 
@@ -24,17 +24,8 @@ We use [``tox``](https://tox.wiki) to simplify any tasks related to continuous i
 ### Running Tests
 You can run (a subset of) tests via
 ```sh
-tox -e py3  -- path-to-tests
+tox -e py3 -- path-to-tests
 ```
-
-### Building the Documentation
-You can build the documentation and view it locally in your browser.
-
-```sh
-tox -e docs -- serve 
-```
-
-Now open a browser and enter the local address shown in your terminal.
 
 ### Formatting Code
 To ensure consistent formatting throughout the library, we check for properly formatted code and imports. 
@@ -48,4 +39,25 @@ tox -e format -- . --check --diff
 If you want ``tox`` to automatically format a specific folder, simply run
 ```sh
 tox -e format -- folder-to-format
+```
+
+### Building the Documentation
+You can build the documentation and view it locally in your browser.
+
+```sh
+tox -e docs -- serve 
+```
+
+Now open a browser and enter the local address shown in your terminal.
+
+
+### Running Code Examples
+You can run the code examples in the documentation, like so.
+
+```sh
+# Run all examples
+tox -e examples
+
+# Run a specific example
+tox -e examples -- docs/examples/my_example/run.py 
 ```

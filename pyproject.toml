@@ -33,12 +33,20 @@ docs = [
     "mkdocstrings-python>=1.16.12", # Automatically generate API documentation
     "markdown-exec>=1.10.3",        # Execute code blocks in markdown files
 ]
+examples = [ # Dependencies for code examples
+    "fire>=0.7.0",
+    "matplotlib>=3.10.0",
+    "pandas>=2.2.3",
+    "seaborn>=0.13.2",
+    "torchmetrics>=1.6.1",
+    "tqdm>=4.67.1",
+]
 tests = [
     "pytest>=6.2.5",     # Testing framework
     "pytest-cov>=3.0.0", # Test coverage
     "tox>=4.19",         # Automation for testing in multiple environments
 ]
-dev = ["inferno[tests]", "inferno[docs]", "inferno[style]"]
+dev = ["inferno[style]", "inferno[docs]", "inferno[examples]", "inferno[tests]"]
 
 [project.urls]
 github = "https://github.com/inferno-dl/inferno"
@@ -138,7 +146,7 @@ sections = [
 ################################################################################
 
 [tool.tox]
-env_list = ["py3", "format", "docs"]
+env_list = ["py3", "format", "docs", "examples"]
 
 [tool.tox.env_run_base]
 description = "Run test under {base_python} using pytest."
@@ -180,6 +188,20 @@ commands = [
         { replace = "posargs", extend = true, default = [
             "{tox_root}",
             "build",
+        ] },
+    ],
+]
+
+[tool.tox.env.examples]
+description = "Run code examples in the documentation."
+extras = ["style", "docs", "examples"]
+allowlist_externals = ["bash"]
+commands = [
+    [
+        "bash",
+        "{tox_root}/docs/examples/run.sh",
+        { replace = "posargs", extend = true, default = [
+            "{tox_root}/docs/examples",
         ] },
     ],
 ]

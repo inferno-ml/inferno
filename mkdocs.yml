@@ -6,7 +6,10 @@ repo_url: https://github.com/inferno-dl/inferno-torch
 nav:
   - Getting Started: index.md
   - Examples:
-      - Classification: examples/classification.md
+      # - Variational Inference via the Implicit Bias of Optimization (VarIBO):
+      - Regression:
+          - Toy Data: examples/varibo/regression/regression.md
+      - Classification: examples/varibo/classification/classification.md
   - API Reference:
       - <code class="doc-symbol doc-symbol-heading">bnn</code>:
           - Modules: api/bnn/modules.md
@@ -17,7 +20,7 @@ nav:
       - <code class="doc-symbol doc-symbol-heading">datasets</code>: api/datasets.md
       - <code class="doc-symbol doc-symbol-heading">loss_fns</code>: api/loss_fns.md
       - <code class="doc-symbol doc-symbol-heading">models</code>: api/models.md
-  - Development Guidelines: development_guidelines.md
+  - Contributing: CONTRIBUTING.md
 
 theme:
   name: material
@@ -64,7 +67,7 @@ theme:
 
 plugins:
   - search
-  - mkdocstrings:
+  - mkdocstrings: # Automatically generate API documentation
       default_handler: python
       handlers:
         python:
@@ -100,6 +103,33 @@ plugins:
               classes: true
               functions: true
               attributes: true
+  - markdown-exec # Execute code blocks in markdown files
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+      toc_depth: 2
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.snippets:
+      check_paths: true
+      base_path: ["docs/examples/", "."]
+      dedent_subsections: true # If code is extracted from a file, dedent it.
+  - pymdownx.magiclink
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      linenums: true
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
 
 extra:
   social:
@@ -111,32 +141,13 @@ extra:
 extra_css:
   - css/mkdocstrings.css
   - css/custom.css
+  - https://unpkg.com/katex@0/dist/katex.min.css
 
 extra_javascript:
-  - javascripts/mathjax.js
-  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
-
-markdown_extensions:
-  - admonition
-  - pymdownx.details
-  - toc:
-      permalink: "#"
-      toc_depth: 2
-  - pymdownx.snippets
-  - pymdownx.magiclink
-  - attr_list
-  - md_in_html
-  - pymdownx.inlinehilite
-  - pymdownx.superfences
-  - pymdownx.keys
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.arithmatex:
-      generic: true
+  # Latex math: https://squidfunk.github.io/mkdocs-material/reference/math/
+  - javascripts/katex.js
+  - https://unpkg.com/katex@0/dist/katex.min.js
+  - https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
 
 validation:
   omitted_files: warn

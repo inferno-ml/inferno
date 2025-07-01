@@ -18,7 +18,7 @@ class KroneckerCovariance(FactorizedCovariance):
 
     Assumes the covariance is given by a Kronecker product of two matrices of size
     equal to the number of inputs and outputs to the layer. Each Kronecker factor is
-    assumed to be of rank :math:`R \leq D` where :math:`D` is either the input or
+    assumed to be of rank $R \leq D$ where $D$ is either the input or
     output dimension of the layer.
 
     More precisely, the covariance is given by
@@ -31,9 +31,9 @@ class KroneckerCovariance(FactorizedCovariance):
     \end{align*}
     $$
 
-    where :math:`\mathbf{S}_{\text{in}}` and :math:`\mathbf{S}_{\text{out}}` are the
-    low-rank factors of the Kronecker factors :math:`\mathbf{C}_{\text{in}}` and 
-    :math:`\mathbf{C}_{\text{out}}`.
+    where $\mathbf{S}_{\text{in}}$ and $\mathbf{S}_{\text{out}}$ are the
+    low-rank factors of the Kronecker factors $\mathbf{C}_{\text{in}}$ and 
+    $\mathbf{C}_{\text{out}}$.
 
     :param input_rank: Rank of the input Kronecker factor. If None, assumes full rank.
     :param output_rank: Rank of the output Kronecker factor. If None, assumes full rank.

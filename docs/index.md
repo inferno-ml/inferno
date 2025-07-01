@@ -12,8 +12,14 @@
 
 You can install inferno using `pip`:
 
+<!-- 
 ```sh
 pip install inferno-torch
+``` 
+-->
+
+```sh
+pip install git+https://github.com/inferno-dl/inferno.git
 ```
 
 ## Basic Usage

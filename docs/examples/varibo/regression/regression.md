@@ -9,7 +9,7 @@ You can run this example yourself via the corresponding [standalone script](run.
 We begin by generating some synthetic training and test data.
 
 <figure markdown="1">
-![Data](data.svg)
+![Data](plots/data.svg)
 </figure>
 
 ## Model
@@ -41,13 +41,13 @@ In practice, for efficiency we only use a single sample per batch during trainin
 ### Learning Curves
 
 <figure markdown="1">
-![Learning Curves](learning_curves.svg)
+![Learning Curves](plots/learning_curves.svg)
 </figure>
 
 ### Prediction
 
 <figure markdown="1">
-![Predictions](predictions.svg)
+![Predictions](plots/predictions.svg)
 </figure>
 
 <!-- 

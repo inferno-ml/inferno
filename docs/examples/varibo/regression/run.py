@@ -27,12 +27,17 @@ def toy_regression(
     plot_data: bool = True,
     plot_learning_curves: bool = True,
     plot_prediction: bool = True,
-    outdir: str = ".",
+    outdir: str = "plots",
 ):
 
+    # Setup
     torch.set_default_dtype(dtype)
     torch.set_default_device(device)
     torch.manual_seed(seed)
+
+    # Create output directory
+    if plot_data or plot_learning_curves or plot_prediction:
+        pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 
     # Generate training and test data
     with torch.no_grad():
@@ -45,7 +50,6 @@ def toy_regression(
             return f(x).squeeze() + noise_scale * torch.randn(x.shape[0])
 
         # Training and test data
-
         X_train = torch.concatenate(
             [
                 0.35 * torch.rand((num_train_data // 3, 1)) - 1.0,
@@ -147,7 +151,7 @@ def toy_regression(
             bias=True,
         ),
         nn.Flatten(-2, -1),
-        # parametrization=bnn.params.SP(),
+        parametrization=bnn.params.MUP(),
     )
     # --8<-- [end:model]
 

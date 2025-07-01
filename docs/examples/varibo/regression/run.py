@@ -17,7 +17,7 @@ def toy_regression(
     batch_size: int = 16,
     num_hidden_layers: int = 3,
     hidden_width: int = 16,
-    num_epochs: int = 300,
+    num_epochs: int = 500,
     lr: float = 1e-2,
     dtype: torch.dtype = torch.float32,
     device: torch.device = torch.device(

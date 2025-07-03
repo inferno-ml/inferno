@@ -58,7 +58,7 @@ github = "https://github.com/inferno-dl/inferno"
 # see https://peps.python.org/pep-0518/
 
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+requires = ["wheel", "setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 # see https://setuptools.pypa.io/en/stable/userguide/pyproject_config.html#setuptools-specific-configuration

@@ -19,7 +19,7 @@ pip install inferno-torch
 -->
 
 ```sh
-pip install git+https://github.com/inferno-dl/inferno.git
+pip install git+https://github.com/inferno-ml/inferno.git
 ```
 
 ## Basic Usage

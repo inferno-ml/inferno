@@ -4,7 +4,7 @@
 
 To get started with contributions to the library follow these steps:
 
-1. Fork the [repository](https://github.com/inferno-dl/inferno).
+1. Fork the [repository](https://github.com/inferno-ml/inferno).
 2. Clone your fork to your machine:
     ```sh
     git clone git@github.com:my-username/inferno.git

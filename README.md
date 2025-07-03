@@ -11,8 +11,8 @@
 
 <h4 align="center">
   <a href="#installation">Installation</a> |  
-  <a href="https://inferno-dl.github.io/inferno/">Documentation</a> | 
-  <a href="https://inferno-dl.github.io/inferno/development_guidelines">Contributing</a>
+  <a href="https://inferno-ml.github.io/inferno/">Documentation</a> | 
+  <a href="https://inferno-ml.github.io/inferno/development_guidelines">Contributing</a>
 </h4>
 
 
@@ -26,5 +26,5 @@ pip install inferno-torch
 
 Alternatively, you can install the development version from source. -->
 ```bash
-pip install git+https://github.com/inferno-dl/inferno.git
+pip install git+https://github.com/inferno-ml/inferno.git
 ```

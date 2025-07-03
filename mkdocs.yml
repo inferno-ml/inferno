@@ -1,7 +1,7 @@
 site_name: Inferno
 site_description: Blazingly fast Bayesian deep learning in PyTorch.
 repo_name: inferno
-repo_url: https://github.com/inferno-dl/inferno-torch
+repo_url: https://github.com/inferno-ml/inferno-torch
 
 nav:
   - Getting Started: index.md
@@ -134,7 +134,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/inferno-dl/inferno
+      link: https://github.com/inferno-ml/inferno
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/inferno-torch/
 

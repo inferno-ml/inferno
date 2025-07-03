@@ -20,11 +20,11 @@
 ## Installation
 
 You can install Inferno via: 
-<!-- ```bash
+```bash
 pip install inferno-torch
 ```
 
-Alternatively, you can install the development version from source. -->
+<!-- Alternatively, you can install the development version from source.
 ```bash
 pip install git+https://github.com/inferno-ml/inferno.git
-```
+``` -->

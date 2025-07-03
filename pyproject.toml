@@ -49,6 +49,8 @@ tests = [
 dev = ["inferno[style]", "inferno[docs]", "inferno[examples]", "inferno[tests]"]
 
 [project.urls]
+homepage = "https://inferno-dl.github.io/inferno/"
+documentation = "https://inferno-dl.github.io/inferno/"
 github = "https://github.com/inferno-dl/inferno"
 
 ################################################################################

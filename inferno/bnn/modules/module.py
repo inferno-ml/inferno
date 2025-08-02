@@ -79,7 +79,6 @@ class BNNModule(nn.Module, abc.ABC):
             # the parametrization.
             if isinstance(layer, BNNModule):
                 param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
-
             else:
                 if len(list(layer.parameters())) > 0:
                     param_groups += parameters_and_lrs_of_torch_module(

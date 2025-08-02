@@ -121,28 +121,33 @@ class Linear(BNNModule):
     ) -> list[dict[str, Tensor | float]]:
         fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(self.params.weight)
 
+        # Weights
         mean_parameter_lr_scales = {}
         mean_parameter_lr_scales["weight"] = self.parametrization.weight_lr_scale(
             fan_in, fan_out, optimizer=optimizer, layer_type=self.layer_type
         )
         param_groups = [
             {
+                "name": "params.weight",
                 "params": self.params.weight,
                 "lr": lr * mean_parameter_lr_scales["weight"],
             }
         ]
 
+        # Bias
         if self.params.bias is not None:
             mean_parameter_lr_scales["bias"] = self.parametrization.bias_lr_scale(
                 fan_in, fan_out, optimizer=optimizer, layer_type=self.layer_type
             )
             param_groups += [
                 {
+                    "name": "params.bias",
                     "params": self.params.bias,
                     "lr": lr * mean_parameter_lr_scales["bias"],
                 }
             ]
 
+        # Covariance
         if self.params.cov is not None:
             for name, param in self.params.cov.named_parameters():
                 lr_scaling = 1.0
@@ -152,6 +157,7 @@ class Linear(BNNModule):
                     lr_scaling = mean_parameter_lr_scales["bias"]
                 param_groups += [
                     {
+                        "name": "params.cov." + name,
                         "params": param,
                         "lr": lr * lr_scaling * self.params.cov.lr_scaling[name],
                     }

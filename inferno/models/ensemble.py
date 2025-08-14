@@ -13,7 +13,7 @@ import torch
 from torch import func, nn
 
 from ..bnn import params
-from ..bnn.modules.module import BNNMixin
+from ..bnn.modules.bnn_mixin import BNNMixin
 
 if TYPE_CHECKING:
     from jaxtyping import Float

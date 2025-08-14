@@ -7,7 +7,7 @@ import torch
 from torch import nn
 
 from ...params import BNNParameter, Parametrization
-from ..module import BNNMixin, batched_forward
+from ..bnn_mixin import BNNMixin, batched_forward
 
 if TYPE_CHECKING:
     from jaxtyping import Float

@@ -9,7 +9,7 @@ from torch.nn.common_types import _size_1_t, _size_2_t, _size_3_t
 from torch.nn.modules.utils import _pair, _reverse_repeat_tuple, _single, _triple
 
 from .. import params
-from .module import BNNMixin
+from .bnn_mixin import BNNMixin
 
 if TYPE_CHECKING:
     from jaxtyping import Float

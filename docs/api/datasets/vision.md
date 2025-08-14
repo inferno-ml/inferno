@@ -1,5 +1,7 @@
 ::: inferno.datasets
     options:
+        heading: datasets > Vision
+        toc_label: datasets > Vision
         members:
         - MNIST
         - MNISTC

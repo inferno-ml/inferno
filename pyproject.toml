@@ -33,10 +33,15 @@ docs = [
     "mkdocstrings-python>=1.16.12", # Automatically generate API documentation
     "markdown-exec>=1.10.3",        # Execute code blocks in markdown files
 ]
-examples = [ # Dependencies for code examples
+datasets = [
+    # Dependencies for benchmark datasets
+    "pandas>=2.2.3",
+]
+examples = [
+    # Dependencies for code examples
+    "inferno-torch[datasets]",
     "fire>=0.7.0",
     "matplotlib>=3.10.0",
-    "pandas>=2.2.3",
     "seaborn>=0.13.2",
     "torchmetrics>=1.6.1",
     "tqdm>=4.67.1",

@@ -4,10 +4,10 @@ from . import params
 from .modules import Conv1d, Conv2d, Conv3d, Linear, Sequential
 from .temperature_scaler import TemperatureScaler
 
-from .modules import BNNModule, batched_forward  # isort:skip
+from .modules import BNNMixin, batched_forward  # isort:skip
 
 __all__ = [
-    "BNNModule",
+    "BNNMixin",
     "Conv1d",
     "Conv2d",
     "Conv3d",

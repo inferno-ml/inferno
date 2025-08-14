@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-import math
 from typing import TYPE_CHECKING, Callable, Literal
 
 import torch
@@ -14,18 +13,20 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 
-class BNNModule(nn.Module, abc.ABC):
-    """Base class for all Bayesian neural network modules.
+class BNNMixin(abc.ABC):
+    """Abstract mixin class turning a torch module into a Bayesian neural network module.
 
     :param parametrization: The parametrization to use. Defines the initialization
         and learning rate scaling for the parameters of the module.
     """
 
     def __init__(
-        self, parametrization: Parametrization | None = MaximalUpdate()
+        self, parametrization: Parametrization | None = MaximalUpdate(), *args, **kwargs
     ) -> None:
-        super().__init__()
         self._parametrization = parametrization
+
+        # Forward all unused arguments to constructors of other parent classes of child class.
+        super().__init__(*args, **kwargs)
 
     @property
     def parametrization(self) -> Parametrization:
@@ -38,7 +39,7 @@ class BNNModule(nn.Module, abc.ABC):
 
         # Set the parametrization of all children to the new parametrization.
         for layer in self.children():
-            if isinstance(layer, BNNModule):
+            if isinstance(layer, BNNMixin):
                 layer.parametrization = self.parametrization
 
     def reset_parameters(self) -> None:
@@ -48,7 +49,7 @@ class BNNModule(nn.Module, abc.ABC):
         This method should be implemented by subclasses to reset the parameters of the module.
         """
         for layer in self.children():
-            if isinstance(layer, BNNModule):
+            if isinstance(layer, BNNMixin):
                 # Set the parametrization of all children to the parametrization of the parent module.
                 layer.parametrization = self.parametrization
                 # Initialize the parameters of the child module.
@@ -77,7 +78,7 @@ class BNNModule(nn.Module, abc.ABC):
 
             # For layers with leaf parameters, return them with adjusted learning rate based on
             # the parametrization.
-            if isinstance(layer, BNNModule):
+            if isinstance(layer, BNNMixin):
                 param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
             else:
                 if len(list(layer.parameters())) > 0:

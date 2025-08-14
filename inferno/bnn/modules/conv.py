@@ -9,14 +9,14 @@ from torch.nn.common_types import _size_1_t, _size_2_t, _size_3_t
 from torch.nn.modules.utils import _pair, _reverse_repeat_tuple, _single, _triple
 
 from .. import params
-from .module import BNNModule
+from .module import BNNMixin
 
 if TYPE_CHECKING:
     from jaxtyping import Float
     from torch import Tensor
 
 
-class _ConvNd(BNNModule):
+class _ConvNd(BNNMixin, nn.Module):
 
     def __init__(
         self,

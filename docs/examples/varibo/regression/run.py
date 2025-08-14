@@ -206,7 +206,7 @@ def toy_regression(
                 test_metric_mse.update(
                     (
                         y_test_pred.mean(dim=0)
-                        if isinstance(model, bnn.BNNModule)
+                        if isinstance(model, bnn.BNNMixin)
                         else y_test_pred
                     ),
                     y_test,

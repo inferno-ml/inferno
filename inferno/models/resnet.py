@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 
-class ResNet(bnn.BNNModule):
+class ResNet(bnn.BNNMixin, nn.Module):
     """A residual neural network for image classification.
 
     :param out_size: Size of the output (i.e. number of classes).
@@ -420,7 +420,7 @@ class ResNet(bnn.BNNModule):
         )
 
 
-class BasicBlock(bnn.BNNModule):
+class BasicBlock(bnn.BNNMixin, nn.Module):
     """Basic block of a ResNet."""
 
     expansion: int = 1
@@ -533,7 +533,7 @@ class BasicBlock(bnn.BNNModule):
         return out
 
 
-class Bottleneck(bnn.BNNModule):
+class Bottleneck(bnn.BNNMixin, nn.Module):
     """Bottleneck block of a ResNet.
 
     Compared to the original implementation this places the stride for downsampling at the

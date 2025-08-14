@@ -43,7 +43,7 @@ def test_shape(base_module, ensemble_size, sample_shape, batch_shape):
     input = torch.randn((*batch_shape, in_features), generator=generator)
     output = ensemble(input, sample_shape=sample_shape, generator=generator)
 
-    if isinstance(base_module, bnn.BNNModule):
+    if isinstance(base_module, bnn.BNNMixin):
         kwargs = {"generator": generator}
     else:
         kwargs = {}

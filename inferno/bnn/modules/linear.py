@@ -6,14 +6,14 @@ import torch
 from torch import nn
 
 from .. import params
-from .module import BNNModule
+from .module import BNNMixin
 
 if TYPE_CHECKING:
     from jaxtyping import Float
     from torch import Tensor
 
 
-class Linear(BNNModule):
+class Linear(BNNMixin, nn.Module):
     """
     Applies an affine transformation to the input.
 
@@ -131,6 +131,7 @@ class Linear(BNNModule):
                 "name": "params.weight",
                 "params": self.params.weight,
                 "lr": lr * mean_parameter_lr_scales["weight"],
+                "layer_type": self.layer_type,
             }
         ]
 
@@ -144,6 +145,7 @@ class Linear(BNNModule):
                     "name": "params.bias",
                     "params": self.params.bias,
                     "lr": lr * mean_parameter_lr_scales["bias"],
+                    "layer_type": self.layer_type,
                 }
             ]
 
@@ -160,6 +162,7 @@ class Linear(BNNModule):
                         "name": "params.cov." + name,
                         "params": param,
                         "lr": lr * lr_scaling * self.params.cov.lr_scaling[name],
+                        "layer_type": self.layer_type,
                     }
                 ]
 

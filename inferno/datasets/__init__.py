@@ -1,12 +1,5 @@
 from .regression_dataset import RegressionDataset  # isort:skip
-from .tabular import (
-    ConcreteCompressiveStrength,
-    ParkinsonsTelemonitoring,
-    ProteinStructure,
-    RoadNetwork,
-    WineQuality,
-)
-from .vision import (
+from .image import (
     CIFAR10,
     CIFAR10C,
     CIFAR100,
@@ -15,4 +8,11 @@ from .vision import (
     MNISTC,
     TinyImageNet,
     TinyImageNetC,
+)
+from .tabular import (
+    ConcreteCompressiveStrength,
+    ParkinsonsTelemonitoring,
+    ProteinStructure,
+    RoadNetwork,
+    WineQuality,
 )

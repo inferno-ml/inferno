@@ -1,5 +1,11 @@
 from .regression_dataset import RegressionDataset  # isort:skip
-from .tabular import ParkinsonsTelemonitoring, ProteinStructure, RoadNetwork
+from .tabular import (
+    ConcreteCompressiveStrength,
+    ParkinsonsTelemonitoring,
+    ProteinStructure,
+    RoadNetwork,
+    WineQuality,
+)
 from .vision import (
     CIFAR10,
     CIFAR10C,

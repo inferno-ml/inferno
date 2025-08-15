@@ -1,3 +1,5 @@
+from .concrete_compressive_strength import ConcreteCompressiveStrength
 from .parkinsons_telemonitoring import ParkinsonsTelemonitoring
 from .protein_structure import ProteinStructure
 from .road_network import RoadNetwork
+from .wine_quality import WineQuality

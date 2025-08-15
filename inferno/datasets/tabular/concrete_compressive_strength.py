@@ -1,12 +1,11 @@
 import io
 import os
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Callable
 from zipfile import ZipFile
 
 import torch
 from torch import Tensor
-import torchvision
 from torchvision.transforms import v2 as transforms
 
 from .. import RegressionDataset

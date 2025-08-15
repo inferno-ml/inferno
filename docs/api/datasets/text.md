@@ -1,6 +1,6 @@
 ::: inferno.datasets
     options:
-        heading: datasets > Text
-        toc_label: datasets > Text
+        heading: datasets > Text Data
+        toc_label: datasets > Text Data
         members:
         - 

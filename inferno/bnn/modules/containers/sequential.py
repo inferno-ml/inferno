@@ -7,14 +7,14 @@ import torch
 from torch import nn
 
 from ...params import BNNParameter, Parametrization
-from ..module import BNNModule, batched_forward
+from ..bnn_mixin import BNNMixin, batched_forward
 
 if TYPE_CHECKING:
     from jaxtyping import Float
     from torch import Tensor
 
 
-class Sequential(BNNModule, nn.Sequential):
+class Sequential(BNNMixin, nn.Sequential):
     """A sequential container for modules.
 
     Modules will be added to it in the order they are passed in the
@@ -41,13 +41,15 @@ class Sequential(BNNModule, nn.Sequential):
 
     @overload
     def __init__(
-        self, *args: BNNModule, parametrization: Parametrization | None = None
+        self,
+        *args: BNNMixin | nn.Module,
+        parametrization: Parametrization | None = None,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        arg: OrderedDict[str, BNNModule],
+        arg: OrderedDict[str, BNNMixin | nn.Module],
         parametrization: Parametrization | None = None,
     ) -> None: ...
 
@@ -82,7 +84,7 @@ class Sequential(BNNModule, nn.Sequential):
         # Sequential forward passes through all modules in the container
         for module in self:
 
-            if isinstance(module, BNNModule):
+            if isinstance(module, BNNMixin):
 
                 if any(
                     [

@@ -144,13 +144,13 @@ def test_setting_a_parametrization_overrides_module_parametrizations():
     )
 
     for module in model.modules():
-        if isinstance(module, bnn.BNNModule):
+        if isinstance(module, bnn.BNNMixin):
             assert isinstance(module.parametrization, params.MaximalUpdate)
 
     model.parametrization = params.NeuralTangent()
 
     for module in model.modules():
-        if isinstance(module, bnn.BNNModule):
+        if isinstance(module, bnn.BNNMixin):
             assert isinstance(module.parametrization, params.NeuralTangent)
 
 
@@ -171,5 +171,5 @@ def test_no_parametrization_given():
     )
 
     for i, module in enumerate(model):
-        if isinstance(module, bnn.BNNModule):
+        if isinstance(module, bnn.BNNMixin):
             assert isinstance(module.parametrization, parametrizations[i])

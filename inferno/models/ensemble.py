@@ -13,14 +13,14 @@ import torch
 from torch import func, nn
 
 from ..bnn import params
-from ..bnn.modules.module import BNNModule
+from ..bnn.modules.bnn_mixin import BNNMixin
 
 if TYPE_CHECKING:
     from jaxtyping import Float
     from torch import Tensor
 
 
-class Ensemble(BNNModule):
+class Ensemble(BNNMixin, nn.Module):
     """An ensemble of models.
 
     This class ensembles multiple models with the same architecture by averaging their predictions.
@@ -34,7 +34,7 @@ class Ensemble(BNNModule):
         parametrization = None
         for module in members:
             if hasattr(module, "parametrization"):
-                # bnn.BNNModule members
+                # bnn.BNNMixin members
                 if parametrization is None:
                     parametrization = copy.deepcopy(module.parametrization)
                 elif not isinstance(module.parametrization, parametrization.__class__):
@@ -73,7 +73,7 @@ class Ensemble(BNNModule):
                     "input_contains_samples": input_contains_samples,
                     "parameter_samples": parameter_samples,
                 }
-                if isinstance(self.base_module[0], BNNModule)
+                if isinstance(self.base_module[0], BNNMixin)
                 else {}
             )
             return func.functional_call(

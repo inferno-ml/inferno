@@ -117,7 +117,7 @@ def test_load_from_state_dict(conv_layer_to_load):
         strict=hasattr(conv_layer_to_load, "params.cov"),
     )
 
-    prefix = "params." if isinstance(conv_layer_to_load, bnn.BNNModule) else ""
+    prefix = "params." if isinstance(conv_layer_to_load, bnn.BNNMixin) else ""
 
     npt.assert_allclose(
         new_conv_layer.params.weight.detach().numpy(),

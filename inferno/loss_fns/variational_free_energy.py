@@ -58,7 +58,7 @@ class VariationalFreeEnergy(nn.Module):
     def __init__(
         self,
         nll: nn.modules.loss._Loss,
-        model: bnn.BNNModule,
+        model: bnn.BNNMixin,
         prior_loc: Float[Tensor, "parameter"] | None = None,
         prior_scale: (
             Float[Tensor, "parameter"] | None

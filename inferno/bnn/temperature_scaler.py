@@ -6,10 +6,7 @@ import torch
 from torch import nn
 
 if TYPE_CHECKING:
-    from jaxtyping import Float
     from torch import Tensor
-
-    from .modules.module import BNNModule
 
 
 class TemperatureScaler(nn.Module):
@@ -52,7 +49,7 @@ class TemperatureScaler(nn.Module):
 
     def optimize(
         self,
-        model: BNNModule,
+        model: nn.Module,
         dataloader: torch.utils.data.DataLoader,
     ) -> None:
         """Optimizes the temperature of the model.
@@ -78,10 +75,7 @@ class TemperatureScaler(nn.Module):
                 temperature_parameter = param
 
         if temperature_parameter is None:
-            raise ValueError(
-                "Model does not have a temperature parameter. "
-                "Please ensure the model is a BNNModule with a temperature parameter."
-            )
+            raise ValueError("Model does not have a temperature parameter.")
 
         # Optimizer
         optimizer = torch.optim.LBFGS(

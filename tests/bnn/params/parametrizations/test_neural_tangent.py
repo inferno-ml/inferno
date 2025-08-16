@@ -85,7 +85,7 @@ def test_parametrization_initializes_torch_module_parameters_correctly(
 ):
     torch.manual_seed(348)
 
-    class MyModel(bnn.BNNModule):
+    class MyModel(bnn.BNNMixin, nn.Module):
 
         def __init__(self):
             super().__init__(parametrization=params.NeuralTangent())

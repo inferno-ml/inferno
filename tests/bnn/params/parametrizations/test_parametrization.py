@@ -17,11 +17,11 @@ import pytest
 def test_changing_parametrization_of_bnn_module_changes_parametrization_of_children(
     parametrization,
 ):
-    """When defining a BNNModule with a certain parametrization, changing the parametrization
-    of the module should change the parametrization of all children that are BNNModules.
+    """When defining a BNN module with a certain parametrization, changing the parametrization
+    of the module should change the parametrization of all children that are BNN modules.
     """
 
-    class MyModel(bnn.BNNModule):
+    class MyModel(bnn.BNNMixin, nn.Module):
 
         def __init__(self):
             super().__init__(parametrization=params.Standard())
@@ -57,12 +57,12 @@ def test_changing_parametrization_of_bnn_module_changes_parametrization_of_child
 
     # Check initial parametrization
     for child in model.children():
-        if isinstance(child, bnn.BNNModule):
+        if isinstance(child, bnn.BNNMixin):
             assert isinstance(child.parametrization, params.Standard)
 
     # Change parametrization and check
     model.parametrization = parametrization()
 
     for child in model.children():
-        if isinstance(child, bnn.BNNModule):
+        if isinstance(child, bnn.BNNMixin):
             assert isinstance(child.parametrization, parametrization)

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class GaussianParameter(BNNParameter):
-    """Parameter of a BNNModule with Gaussian distribution.
+    """Parameter of a BNN module with Gaussian distribution.
 
     :param mean: Mean of the Gaussian distribution.
     :param cov: Covariance of the Gaussian distribution.

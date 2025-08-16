@@ -18,8 +18,8 @@ nav:
               - Parameters: api/bnn/bnn.params/parameters.md
               - Parametrizations: api/bnn/bnn.params/parametrizations.md
       - <code class="doc-symbol doc-symbol-heading">datasets</code>:
-          - Language: api/datasets/language.md
-          - Vision: api/datasets/vision.md
+          - Text: api/datasets/text.md
+          - Image: api/datasets/image.md
           - Tabular: api/datasets/tabular.md
       - <code class="doc-symbol doc-symbol-heading">loss_fns</code>: api/loss_fns.md
       - <code class="doc-symbol doc-symbol-heading">models</code>: api/models.md

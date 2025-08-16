@@ -1,13 +1,13 @@
 ::: inferno.datasets
     options:
-        heading: datasets > Vision
-        toc_label: datasets > Vision
+        heading: datasets > Image Data
+        toc_label: datasets > Image Data
         members:
-        - MNIST
-        - MNISTC
         - CIFAR10
         - CIFAR10C
         - CIFAR100
         - CIFAR100C
+        - MNIST
+        - MNISTC
         - TinyImageNet
         - TinyImageNetC

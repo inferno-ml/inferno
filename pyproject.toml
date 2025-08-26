@@ -35,7 +35,9 @@ docs = [
 ]
 datasets = [
     # Dependencies for benchmark datasets
+    "xlrd>=2.0.1",
     "pandas>=2.2.3",
+    "requests>=2.32.3",
 ]
 examples = [
     # Dependencies for code examples

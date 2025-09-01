@@ -22,6 +22,9 @@ def test_mixin_overrides_torch_module_forward(TorchClass: nn.Module, kwargs: dic
     class MyBNNModule(bnn.BNNMixin, TorchClass):
         pass
 
+        def reset_parameters(self):
+            pass
+
     my_bnn_module = MyBNNModule(**kwargs)
 
     with pytest.raises(NotImplementedError):
@@ -30,6 +33,9 @@ def test_mixin_overrides_torch_module_forward(TorchClass: nn.Module, kwargs: dic
     # Mixin as second superclass falls back to nn.Module.forward
     class MyBNNModule(TorchClass, bnn.BNNMixin):
         pass
+
+        def reset_parameters(self):
+            pass
 
     my_bnn_module = MyBNNModule(**kwargs)
 
@@ -54,6 +60,9 @@ def test_mixin_allows_setting_parametrization(
 
     class MyBNNModule(bnn.BNNMixin, TorchClass):
         pass
+
+        def reset_parameters(self):
+            pass
 
     my_bnn_module = MyBNNModule(**kwargs, parametrization=parametrization)
 

@@ -48,6 +48,16 @@ class BNNMixin(abc.ABC):
 
         This method should be implemented by subclasses to reset the parameters of the module.
         """
+        if len(list(self.parameters(recurse=False))) > 0 or any(
+            isinstance(child, (nn.ParameterDict, nn.ParameterList))
+            for child in self.children()
+        ):
+            raise NotImplementedError(
+                f"BNNMixin modules with parameters assigned to them must override 'reset_parameters()' "
+                "to define how parameters should be initialized (depending on the parametrization). "
+                "Be sure to also reset the parameters of any child modules according to the parametrization."
+            )
+
         for layer in self.children():
             if isinstance(layer, BNNMixin):
                 # Set the parametrization of all children to the parametrization of the parent module.
@@ -70,6 +80,17 @@ class BNNMixin(abc.ABC):
         :param lr: The global learning rate.
         :param optimizer: The optimizer being used.
         """
+        # Check whether this module has any parameters itself (not just its children).
+        if len(list(self.parameters(recurse=False))) > 0 or any(
+            isinstance(child, (nn.ParameterDict, nn.ParameterList))
+            for child in self.children()
+        ):
+            raise NotImplementedError(
+                f"BNNMixin modules with parameters assigned to them must override 'parameters_and_lrs()' "
+                "to define how parameters which learning rate scaling "
+                "should be used according to the parametrization."
+            )
+        
         param_groups = []
 
         # Cycle through all children of the module and get their parameters and learning rates

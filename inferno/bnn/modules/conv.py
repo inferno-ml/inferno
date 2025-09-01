@@ -174,7 +174,7 @@ class _ConvNd(BNNMixin, nn.Module):
         param_groups = [
             {
                 "name": "params.weight",
-                "params": self.params.weight,
+                "params": [self.params.weight],
                 "lr": lr * mean_parameter_lr_scales["weight"],
             }
         ]
@@ -187,7 +187,7 @@ class _ConvNd(BNNMixin, nn.Module):
             param_groups += [
                 {
                     "name": "params.bias",
-                    "params": self.params.bias,
+                    "params": [self.params.bias],
                     "lr": lr * mean_parameter_lr_scales["bias"],
                 }
             ]
@@ -203,7 +203,7 @@ class _ConvNd(BNNMixin, nn.Module):
                 param_groups += [
                     {
                         "name": "params.cov." + name,
-                        "params": param,
+                        "params": [param],
                         "lr": lr * lr_scaling * self.params.cov.lr_scaling[name],
                     }
                 ]

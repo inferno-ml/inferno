@@ -121,14 +121,20 @@ def reset_parameters_of_torch_module(
     /,
     parametrization: Parametrization,
 ) -> None:
-    """Reset the parameters of a torch.nn.Module according to a given parametrization.
+    """Reset the parameters of a torch.nn.Module and its children according to a given parametrization.
 
     :param module: The torch.nn.Module to reset the parameters of.
     :param parametrization: The parametrization to use.
     """
     module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
     if len(module_parameter_names) == 0:
-        return
+        pass
+    elif isinstance(
+        module,
+        (nn.Sequential, nn.ModuleList),
+    ):
+        # No need to reset since children are reset below
+        pass
     elif isinstance(
         module,
         (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d),
@@ -158,6 +164,20 @@ def reset_parameters_of_torch_module(
             f"Cannot reset parameters of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
+    
+    # Reset parameters of child modules
+    for layer in module.children():
+
+        if isinstance(layer, BNNMixin):
+            # Set the parametrization of all children to the parametrization of the parent module.
+            layer.parametrization = parametrization
+            # Initialize the parameters of the child module.
+            layer.reset_parameters()
+        else:
+            if hasattr(layer, "reset_parameters"):
+                reset_parameters_of_torch_module(
+                    layer, parametrization=parametrization
+            )
 
 
 def parameters_and_lrs_of_torch_module(
@@ -167,7 +187,7 @@ def parameters_and_lrs_of_torch_module(
     parametrization: Parametrization,
     optimizer: Literal["SGD", "Adam"],
 ) -> list[dict[str, Tensor | float]]:
-    """Get the parameters and their learning rates for the chosen parametrization and optimizer.
+    """Get the parameters and their learning rates of module and its children for the chosen parametrization and optimizer.
 
     :param module: The torch.nn.Module to get the parameters and learning rates of.
     :param lr: The global learning rate.
@@ -177,6 +197,12 @@ def parameters_and_lrs_of_torch_module(
     param_groups = []
     module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
     if len(module_parameter_names) == 0:
+        pass
+    elif isinstance(
+        module,
+        (nn.Sequential, nn.ModuleList),
+    ):
+        # No need to add because children will be added below
         pass
     elif isinstance(
         module,
@@ -243,6 +269,22 @@ def parameters_and_lrs_of_torch_module(
             f"Cannot set learning rates of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
+    
+    # Cycle through all children of the module and get their parameters and learning rates
+    for layer in module.children():
+
+        # For layers with leaf parameters, return them with adjusted learning rate based on
+        # the parametrization.
+        if isinstance(layer, BNNMixin):
+            param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
+        else:
+            if len(list(layer.parameters())) > 0:
+                param_groups += parameters_and_lrs_of_torch_module(
+                    layer,
+                    lr=lr,
+                    parametrization=parametrization,
+                    optimizer=optimizer,
+                )
 
     return param_groups
 

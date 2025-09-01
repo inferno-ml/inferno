@@ -133,23 +133,8 @@ def reset_parameters_of_torch_module(
         module,
         (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d),
     ):
-        # No need to reset parameters of layer norm according to Appendix B.1 of http://arxiv.org/abs/2203.03466
-        return
-        # nn.init.normal_(
-        #     module.weight,
-        #     mean=0,
-        #     std=parametrization.weight_init_scale(
-        #         fan_in=1.0, fan_out=None, layer_type="input"
-        #     ),
-        # )
-        # if module.bias is not None:
-        #     nn.init.normal_(
-        #         module.bias,
-        #         mean=0,
-        #         std=parametrization.bias_init_scale(
-        #             fan_in=1.0, fan_out=None, layer_type="input"
-        #         ),
-        #     )
+        # No need to change parameter initialization of layer norm according to Appendix B.1 of http://arxiv.org/abs/2203.03466
+        module.reset_parameters()
     elif "weight" in module_parameter_names:
         fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(module.weight)
 
@@ -206,7 +191,7 @@ def parameters_and_lrs_of_torch_module(
         fan_out = module.weight.shape.numel()
         param_groups + [
             {
-                "params": module.weight,
+                "params": [module.weight],
                 "lr": lr
                 * parametrization.weight_lr_scale(
                     fan_in=1.0,
@@ -220,7 +205,7 @@ def parameters_and_lrs_of_torch_module(
         if module.bias is not None:
             param_groups + [
                 {
-                    "params": module.bias,
+                    "params": [module.bias],
                     "lr": lr
                     * parametrization.bias_lr_scale(
                         fan_in=1.0,
@@ -235,7 +220,7 @@ def parameters_and_lrs_of_torch_module(
 
         param_groups + [
             {
-                "params": module.weight,
+                "params": [module.weight],
                 "lr": lr
                 * parametrization.weight_lr_scale(
                     fan_in=fan_in, fan_out=fan_out, optimizer=optimizer
@@ -246,7 +231,7 @@ def parameters_and_lrs_of_torch_module(
         if module.bias is not None:
             param_groups + [
                 {
-                    "params": module.bias,
+                    "params": [module.bias],
                     "lr": lr
                     * parametrization.bias_lr_scale(
                         fan_in=fan_in, fan_out=fan_out, optimizer=optimizer

@@ -151,7 +151,7 @@ def reset_parameters_of_torch_module(
                 fan_in=fan_in, fan_out=fan_out, layer_type="hidden"
             ),
         )
-        if module.bias is not None:
+        if "bias" in module_parameter_names and module.bias is not None:
             nn.init.normal_(
                 module.bias,
                 mean=0,
@@ -254,7 +254,7 @@ def parameters_and_lrs_of_torch_module(
             }
         ]
 
-        if module.bias is not None:
+        if "bias" in module_parameter_names and module.bias is not None:
             param_groups + [
                 {
                     "params": [module.bias],

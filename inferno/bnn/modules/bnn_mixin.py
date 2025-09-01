@@ -55,10 +55,9 @@ class BNNMixin(abc.ABC):
                 # Initialize the parameters of the child module.
                 layer.reset_parameters()
             else:
-                if hasattr(layer, "reset_parameters"):
-                    reset_parameters_of_torch_module(
-                        layer, parametrization=self.parametrization
-                    )
+                reset_parameters_of_torch_module(
+                    layer, parametrization=self.parametrization
+                )
 
     def parameters_and_lrs(
         self,
@@ -81,13 +80,12 @@ class BNNMixin(abc.ABC):
             if isinstance(layer, BNNMixin):
                 param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
             else:
-                if len(list(layer.parameters())) > 0:
-                    param_groups += parameters_and_lrs_of_torch_module(
-                        layer,
-                        lr=lr,
-                        parametrization=self.parametrization,
-                        optimizer=optimizer,
-                    )
+                param_groups += parameters_and_lrs_of_torch_module(
+                    layer,
+                    lr=lr,
+                    parametrization=self.parametrization,
+                    optimizer=optimizer,
+                )
 
         return param_groups
 
@@ -174,9 +172,8 @@ def reset_parameters_of_torch_module(
             # Initialize the parameters of the child module.
             layer.reset_parameters()
         else:
-            if hasattr(layer, "reset_parameters"):
-                reset_parameters_of_torch_module(
-                    layer, parametrization=parametrization
+            reset_parameters_of_torch_module(
+                layer, parametrization=parametrization
             )
 
 
@@ -278,13 +275,12 @@ def parameters_and_lrs_of_torch_module(
         if isinstance(layer, BNNMixin):
             param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
         else:
-            if len(list(layer.parameters())) > 0:
-                param_groups += parameters_and_lrs_of_torch_module(
-                    layer,
-                    lr=lr,
-                    parametrization=parametrization,
-                    optimizer=optimizer,
-                )
+            param_groups += parameters_and_lrs_of_torch_module(
+                layer,
+                lr=lr,
+                parametrization=parametrization,
+                optimizer=optimizer,
+            )
 
     return param_groups
 

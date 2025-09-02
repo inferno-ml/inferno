@@ -149,28 +149,16 @@ def reset_parameters_of_torch_module(
         pass
     elif isinstance(
         module,
-        (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d),
+        (
+            nn.LayerNorm, 
+            nn.GroupNorm, 
+            nn.BatchNorm1d, 
+            nn.BatchNorm2d, 
+            nn.BatchNorm3d
+        ),
     ):
         # No need to change parameter initialization of layer norm according to Appendix B.1 of http://arxiv.org/abs/2203.03466
         module.reset_parameters()
-    elif "weight" in module_parameter_names:
-        fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(module.weight)
-
-        nn.init.normal_(
-            module.weight,
-            mean=0,
-            std=parametrization.weight_init_scale(
-                fan_in=fan_in, fan_out=fan_out, layer_type="hidden"
-            ),
-        )
-        if "bias" in module_parameter_names and module.bias is not None:
-            nn.init.normal_(
-                module.bias,
-                mean=0,
-                std=parametrization.bias_init_scale(
-                    fan_in=fan_in, fan_out=fan_out, layer_type="hidden"
-                ),
-            )
     else:
         raise NotImplementedError(
             f"Cannot reset parameters of module: {module.__class__.__name__} "
@@ -243,29 +231,6 @@ def parameters_and_lrs_of_torch_module(
                         fan_out=fan_out,
                         optimizer=optimizer,
                         layer_type="input",
-                    ),
-                }
-            ]
-    elif "weight" in module_parameter_names:
-        fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(module.weight)
-
-        param_groups + [
-            {
-                "params": [module.weight],
-                "lr": lr
-                * parametrization.weight_lr_scale(
-                    fan_in=fan_in, fan_out=fan_out, optimizer=optimizer
-                ),
-            }
-        ]
-
-        if "bias" in module_parameter_names and module.bias is not None:
-            param_groups + [
-                {
-                    "params": [module.bias],
-                    "lr": lr
-                    * parametrization.bias_lr_scale(
-                        fan_in=fan_in, fan_out=fan_out, optimizer=optimizer
                     ),
                 }
             ]

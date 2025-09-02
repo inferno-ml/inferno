@@ -144,14 +144,8 @@ def reset_parameters_of_torch_module(
     :param module: The torch.nn.Module to reset the parameters of.
     :param parametrization: The parametrization to use.
     """
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
+    module_parameter_names = [param_name for param_name, _ in module.named_parameters(recurse=False)]
     if len(module_parameter_names) == 0:
-        pass
-    elif isinstance(
-        module,
-        (nn.Sequential, nn.ModuleList),
-    ):
-        # No need to reset since children are reset below
         pass
     elif isinstance(
         module,
@@ -212,14 +206,8 @@ def parameters_and_lrs_of_torch_module(
     :param optimizer: The optimizer being used.
     """
     param_groups = []
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
+    module_parameter_names = [param_name for param_name, _ in module.named_parameters(recurse=False)]
     if len(module_parameter_names) == 0:
-        pass
-    elif isinstance(
-        module,
-        (nn.Sequential, nn.ModuleList),
-    ):
-        # No need to add because children will be added below
         pass
     elif isinstance(
         module,

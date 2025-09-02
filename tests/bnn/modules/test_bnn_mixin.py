@@ -72,8 +72,10 @@ def test_mixin_allows_setting_parametrization(
 @pytest.mark.parametrize(
     "TorchClass,kwargs",
     [
-        (nn.Linear, {"in_features": 5, "out_features": 2}),
-        (nn.Conv1d, {"in_channels": 3, "out_channels": 1, "kernel_size": 1}),
+        (nn.Linear, {}),
+        (nn.Conv1d, {"kernel_size": 1}),
+        (nn.Conv2d, {"kernel_size": 1}),
+        (nn.Conv3d, {"kernel_size": 1}),
     ],
 )
 def test_mixin_prohibits_certain_torch_modules(
@@ -84,7 +86,12 @@ def test_mixin_prohibits_certain_torch_modules(
     class MyBNNModule(bnn.BNNMixin, nn.Module):
         def __init__(self):
             super().__init__()
-            self.layer = TorchClass(**kwargs)
+            self.layer = TorchClass(
+                3,
+                2,
+                bias=True,
+                **kwargs
+            )
 
     my_bnn_module = MyBNNModule()
 
@@ -95,12 +102,11 @@ def test_mixin_prohibits_certain_torch_modules(
         my_bnn_module.parameters_and_lrs(lr=1.0, optimizer="SGD")
 
 
-
 @pytest.mark.parametrize(
     "TorchClass,kwargs",
     [
         (nn.LayerNorm, {"normalized_shape": (3,2)}), 
-        (nn.GroupNorm, {"num_groups": 2, "num_channels": 4}),
+        (nn.GroupNorm, {"num_groups": 2, "num_channels": 2}),
         (nn.BatchNorm1d, {"num_features": 3}),
         (nn.BatchNorm2d, {"num_features": 3}),
         (nn.BatchNorm3d, {"num_features": 3}),

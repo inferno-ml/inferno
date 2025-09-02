@@ -110,6 +110,9 @@ def test_mixin_prohibits_certain_torch_modules(
         (nn.BatchNorm1d, {"num_features": 3}),
         (nn.BatchNorm2d, {"num_features": 3}),
         (nn.BatchNorm3d, {"num_features": 3}),
+        (nn.Sequential, {}),
+        (nn.ModuleList, {}),
+        (nn.ModuleDict, {}),
     ],
 )
 def test_mixin_allows_certain_torch_modules(

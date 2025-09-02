@@ -89,7 +89,7 @@ class BNNMixin(abc.ABC):
                 f"BNNMixin modules with parameters assigned to them must override 'parameters_and_lrs()' "
                 "to define which learning rate scaling should be used according to the parametrization."
             )
-        
+
         param_groups = []
 
         # Cycle through all children of the module and get their parameters and learning rates
@@ -144,18 +144,14 @@ def reset_parameters_of_torch_module(
     :param module: The torch.nn.Module to reset the parameters of.
     :param parametrization: The parametrization to use.
     """
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters(recurse=False)]
+    module_parameter_names = [
+        param_name for param_name, _ in module.named_parameters(recurse=False)
+    ]
     if len(module_parameter_names) == 0:
         pass
     elif isinstance(
         module,
-        (
-            nn.LayerNorm, 
-            nn.GroupNorm, 
-            nn.BatchNorm1d, 
-            nn.BatchNorm2d, 
-            nn.BatchNorm3d
-        ),
+        (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d),
     ):
         # No need to change parameter initialization of layer norm according to Appendix B.1 of http://arxiv.org/abs/2203.03466
         module.reset_parameters()
@@ -164,7 +160,7 @@ def reset_parameters_of_torch_module(
             f"Cannot reset parameters of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
-    
+
     # Reset parameters of child modules
     for child in module.children():
 
@@ -174,9 +170,7 @@ def reset_parameters_of_torch_module(
             # Initialize the parameters of the child module.
             child.reset_parameters()
         else:
-            reset_parameters_of_torch_module(
-                child, parametrization=parametrization
-            )
+            reset_parameters_of_torch_module(child, parametrization=parametrization)
 
 
 def parameters_and_lrs_of_torch_module(
@@ -194,7 +188,9 @@ def parameters_and_lrs_of_torch_module(
     :param optimizer: The optimizer being used.
     """
     param_groups = []
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters(recurse=False)]
+    module_parameter_names = [
+        param_name for param_name, _ in module.named_parameters(recurse=False)
+    ]
     if len(module_parameter_names) == 0:
         pass
     elif isinstance(
@@ -239,7 +235,7 @@ def parameters_and_lrs_of_torch_module(
             f"Cannot set learning rates of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
-    
+
     # Cycle through all children of the module and get their parameters and learning rates
     for child in module.children():
 

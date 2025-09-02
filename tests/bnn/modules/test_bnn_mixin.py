@@ -78,20 +78,13 @@ def test_mixin_allows_setting_parametrization(
         (nn.Conv3d, {"kernel_size": 1}),
     ],
 )
-def test_mixin_prohibits_certain_torch_modules(
-    TorchClass: nn.Module, kwargs: dict
-):
+def test_mixin_prohibits_certain_torch_modules(TorchClass: nn.Module, kwargs: dict):
 
     # Check that reset_parameters and parameters_and_lrs fail when TorchClass used
     class MyBNNModule(bnn.BNNMixin, nn.Module):
         def __init__(self):
             super().__init__()
-            self.layer = TorchClass(
-                3,
-                2,
-                bias=True,
-                **kwargs
-            )
+            self.layer = TorchClass(3, 2, bias=True, **kwargs)
 
     my_bnn_module = MyBNNModule()
 
@@ -105,7 +98,7 @@ def test_mixin_prohibits_certain_torch_modules(
 @pytest.mark.parametrize(
     "TorchClass,kwargs",
     [
-        (nn.LayerNorm, {"normalized_shape": (3,2)}), 
+        (nn.LayerNorm, {"normalized_shape": (3, 2)}),
         (nn.GroupNorm, {"num_groups": 2, "num_channels": 2}),
         (nn.BatchNorm1d, {"num_features": 3}),
         (nn.BatchNorm2d, {"num_features": 3}),
@@ -115,9 +108,7 @@ def test_mixin_prohibits_certain_torch_modules(
         (nn.ModuleDict, {}),
     ],
 )
-def test_mixin_allows_certain_torch_modules(
-    TorchClass: nn.Module, kwargs: dict
-):
+def test_mixin_allows_certain_torch_modules(TorchClass: nn.Module, kwargs: dict):
 
     # Check that reset_parameters and parameters_and_lrs work when TorchClass used
     class MyBNNModule(bnn.BNNMixin, nn.Module):

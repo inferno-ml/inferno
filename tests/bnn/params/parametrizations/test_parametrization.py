@@ -38,8 +38,8 @@ def test_changing_parametrization_of_bnn_module_changes_parametrization_of_child
                 cov=params.FactorizedCovariance(),
             )
             self.linear3 = bnn.Linear(
-                3, 
-                1, 
+                3,
+                1,
                 bias=True,
                 cov=params.LowRankCovariance(rank=1),
             )

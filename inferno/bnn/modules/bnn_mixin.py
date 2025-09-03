@@ -238,9 +238,6 @@ def parameters_and_lrs_of_torch_module(
 
     # Cycle through all children of the module and get their parameters and learning rates
     for child in module.children():
-
-        # For layers with leaf parameters, return them with adjusted learning rate based on
-        # the parametrization.
         if isinstance(child, BNNMixin):
             param_groups += child.parameters_and_lrs(lr=lr, optimizer=optimizer)
         else:

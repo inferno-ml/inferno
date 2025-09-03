@@ -37,7 +37,12 @@ def test_changing_parametrization_of_bnn_module_changes_parametrization_of_child
                 bias=False,
                 cov=params.FactorizedCovariance(),
             )
-            self.linear3 = nn.Linear(3, 1, bias=True)
+            self.linear3 = bnn.Linear(
+                3,
+                1,
+                bias=True,
+                cov=params.LowRankCovariance(rank=1),
+            )
             self.relu1 = nn.ReLU()
             self.relu2 = nn.ReLU()
             self.relu3 = nn.ReLU()

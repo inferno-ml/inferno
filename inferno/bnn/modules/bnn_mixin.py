@@ -48,17 +48,26 @@ class BNNMixin(abc.ABC):
 
         This method should be implemented by subclasses to reset the parameters of the module.
         """
-        for layer in self.children():
-            if isinstance(layer, BNNMixin):
+        if len(list(self.parameters(recurse=False))) > 0 or any(
+            isinstance(child, (nn.ParameterDict, nn.ParameterList))
+            for child in self.children()
+        ):
+            raise NotImplementedError(
+                f"BNNMixin modules with parameters assigned to them must override 'reset_parameters()' "
+                "to define how parameters should be initialized (depending on the parametrization). "
+                "Be sure to also reset the parameters of any child modules according to the parametrization."
+            )
+
+        for child in self.children():
+            if isinstance(child, BNNMixin):
                 # Set the parametrization of all children to the parametrization of the parent module.
-                layer.parametrization = self.parametrization
+                child.parametrization = self.parametrization
                 # Initialize the parameters of the child module.
-                layer.reset_parameters()
+                child.reset_parameters()
             else:
-                if hasattr(layer, "reset_parameters"):
-                    reset_parameters_of_torch_module(
-                        layer, parametrization=self.parametrization
-                    )
+                reset_parameters_of_torch_module(
+                    child, parametrization=self.parametrization
+                )
 
     def parameters_and_lrs(
         self,
@@ -71,23 +80,32 @@ class BNNMixin(abc.ABC):
         :param lr: The global learning rate.
         :param optimizer: The optimizer being used.
         """
+        # Check whether this module has any parameters itself (not just its children).
+        if len(list(self.parameters(recurse=False))) > 0 or any(
+            isinstance(child, (nn.ParameterDict, nn.ParameterList))
+            for child in self.children()
+        ):
+            raise NotImplementedError(
+                f"BNNMixin modules with parameters assigned to them must override 'parameters_and_lrs()' "
+                "to define which learning rate scaling should be used according to the parametrization."
+            )
+
         param_groups = []
 
         # Cycle through all children of the module and get their parameters and learning rates
-        for layer in self.children():
+        for child in self.children():
 
             # For layers with leaf parameters, return them with adjusted learning rate based on
             # the parametrization.
-            if isinstance(layer, BNNMixin):
-                param_groups += layer.parameters_and_lrs(lr=lr, optimizer=optimizer)
+            if isinstance(child, BNNMixin):
+                param_groups += child.parameters_and_lrs(lr=lr, optimizer=optimizer)
             else:
-                if len(list(layer.parameters())) > 0:
-                    param_groups += parameters_and_lrs_of_torch_module(
-                        layer,
-                        lr=lr,
-                        parametrization=self.parametrization,
-                        optimizer=optimizer,
-                    )
+                param_groups += parameters_and_lrs_of_torch_module(
+                    child,
+                    lr=lr,
+                    parametrization=self.parametrization,
+                    optimizer=optimizer,
+                )
 
         return param_groups
 
@@ -121,43 +139,38 @@ def reset_parameters_of_torch_module(
     /,
     parametrization: Parametrization,
 ) -> None:
-    """Reset the parameters of a torch.nn.Module according to a given parametrization.
+    """Reset the parameters of a torch.nn.Module and its children according to a given parametrization.
 
     :param module: The torch.nn.Module to reset the parameters of.
     :param parametrization: The parametrization to use.
     """
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
+    module_parameter_names = [
+        param_name for param_name, _ in module.named_parameters(recurse=False)
+    ]
     if len(module_parameter_names) == 0:
-        return
+        pass
     elif isinstance(
         module,
         (nn.LayerNorm, nn.GroupNorm, nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d),
     ):
         # No need to change parameter initialization of layer norm according to Appendix B.1 of http://arxiv.org/abs/2203.03466
         module.reset_parameters()
-    elif "weight" in module_parameter_names:
-        fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(module.weight)
-
-        nn.init.normal_(
-            module.weight,
-            mean=0,
-            std=parametrization.weight_init_scale(
-                fan_in=fan_in, fan_out=fan_out, layer_type="hidden"
-            ),
-        )
-        if module.bias is not None:
-            nn.init.normal_(
-                module.bias,
-                mean=0,
-                std=parametrization.bias_init_scale(
-                    fan_in=fan_in, fan_out=fan_out, layer_type="hidden"
-                ),
-            )
     else:
         raise NotImplementedError(
             f"Cannot reset parameters of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
+
+    # Reset parameters of child modules
+    for child in module.children():
+
+        if isinstance(child, BNNMixin):
+            # Set the parametrization of all children to the parametrization of the parent module.
+            child.parametrization = parametrization
+            # Initialize the parameters of the child module.
+            child.reset_parameters()
+        else:
+            reset_parameters_of_torch_module(child, parametrization=parametrization)
 
 
 def parameters_and_lrs_of_torch_module(
@@ -167,7 +180,7 @@ def parameters_and_lrs_of_torch_module(
     parametrization: Parametrization,
     optimizer: Literal["SGD", "Adam"],
 ) -> list[dict[str, Tensor | float]]:
-    """Get the parameters and their learning rates for the chosen parametrization and optimizer.
+    """Get the parameters and their learning rates of module and its children for the chosen parametrization and optimizer.
 
     :param module: The torch.nn.Module to get the parameters and learning rates of.
     :param lr: The global learning rate.
@@ -175,7 +188,9 @@ def parameters_and_lrs_of_torch_module(
     :param optimizer: The optimizer being used.
     """
     param_groups = []
-    module_parameter_names = [param_name for param_name, _ in module.named_parameters()]
+    module_parameter_names = [
+        param_name for param_name, _ in module.named_parameters(recurse=False)
+    ]
     if len(module_parameter_names) == 0:
         pass
     elif isinstance(
@@ -215,34 +230,23 @@ def parameters_and_lrs_of_torch_module(
                     ),
                 }
             ]
-    elif "weight" in module_parameter_names:
-        fan_in, fan_out = nn.init._calculate_fan_in_and_fan_out(module.weight)
-
-        param_groups + [
-            {
-                "params": [module.weight],
-                "lr": lr
-                * parametrization.weight_lr_scale(
-                    fan_in=fan_in, fan_out=fan_out, optimizer=optimizer
-                ),
-            }
-        ]
-
-        if module.bias is not None:
-            param_groups + [
-                {
-                    "params": [module.bias],
-                    "lr": lr
-                    * parametrization.bias_lr_scale(
-                        fan_in=fan_in, fan_out=fan_out, optimizer=optimizer
-                    ),
-                }
-            ]
     else:
         raise NotImplementedError(
             f"Cannot set learning rates of module: {module.__class__.__name__} "
             f"according to the {parametrization.__class__.__name__} parametrization."
         )
+
+    # Cycle through all children of the module and get their parameters and learning rates
+    for child in module.children():
+        if isinstance(child, BNNMixin):
+            param_groups += child.parameters_and_lrs(lr=lr, optimizer=optimizer)
+        else:
+            param_groups += parameters_and_lrs_of_torch_module(
+                child,
+                lr=lr,
+                parametrization=parametrization,
+                optimizer=optimizer,
+            )
 
     return param_groups
 

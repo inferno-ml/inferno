@@ -82,7 +82,8 @@ def toy_classification(
                 cmap="RdBu", 
                 edgecolor="k", 
                 s=30, 
-                label="Training data")
+                label="Training data"
+            )
             
             # Test data
             ax.scatter(
@@ -178,22 +179,27 @@ def toy_classification(
             model.eval()
             
             test_acc_metric = torchmetrics.classification.BinaryAccuracy()
-
+            
             test_acc_metric.reset()
 
-            logits_s = model(
-                X_test_t, 
-                sample_shape=(128,)
-            )
-            
-            probs = torch.sigmoid(logits_s).mean(dim=0)
-            preds = (probs >= 0.5).float()
-            
-            test_acc_metric.update(
-                preds.squeeze(-1), 
-                y_test_t.squeeze(-1)
-            )
-            
+            for X_batch, y_batch in test_dataloader:
+                
+                X_batch = X_batch.to(device=device)
+                y_batch = y_batch.to(device=device)
+                
+                logits_s = model(
+                    X_batch, 
+                    sample_shape=(128,)
+                )
+                
+                probs = torch.sigmoid(logits_s).mean(dim=0)
+                preds = (probs >= 0.5).float()
+                
+                test_acc_metric.update(
+                    preds.view(-1),
+                    y_batch.view(-1)
+                )
+
             test_acc = test_acc_metric.compute().item()
 
             results_list.append(
@@ -267,7 +273,8 @@ def toy_classification(
             plt.savefig(
                 pathlib.Path(outdir) / "learning_curves.svg", 
                 bbox_inches="tight", 
-                pad_inches=0.1)
+                pad_inches=0.1
+            )
             plt.close()
 
     if plot_decision_boundary:
@@ -277,17 +284,20 @@ def toy_classification(
 
         xx, yy = np.meshgrid(
             np.linspace(x_min, x_max, 200),
-            np.linspace(y_min, y_max, 200))
+            np.linspace(y_min, y_max, 200)
+        )
 
         grid = np.stack(
             [xx.ravel(),
              yy.ravel()],
-            axis=-1)
+            axis=-1
+        )
 
         grid_t = torch.tensor(
             grid,
             dtype=dtype,
-            device=device)
+            device=device
+        )
 
         with torch.no_grad():
             model.eval()
@@ -306,7 +316,8 @@ def toy_classification(
             Z,
             levels=20,
             alpha=0.8,
-            cmap="RdBu")
+            cmap="RdBu"
+        )
 
         # Training data
         train_scatter = ax.scatter(
@@ -349,7 +360,8 @@ def toy_classification(
         plt.savefig(
             pathlib.Path(outdir) / "decision_boundary.svg",
             bbox_inches="tight",
-            pad_inches=0.1)
+            pad_inches=0.1
+        )
         plt.close()
 
 

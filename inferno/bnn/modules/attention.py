@@ -17,7 +17,9 @@ class MultiHeadAttention(BNNMixin, nn.Module):
     """Attention layer (with multiple heads).
 
     Multi-head (self-)attention layer with an optional attention mask, allowing a model to jointly attend
-    to information from different representation subspaces.
+    to information from different representation subspaces. Consists of ``num_heads`` scaled dot-product
+    attention modules, whose outputs are concatenated and then combined into an output sequence via a
+    linear layer.
 
     The module supports nested or padded tensors and is based on the following
     [implementation](https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html).

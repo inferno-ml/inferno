@@ -46,6 +46,7 @@ class MultiHeadAttention(BNNMixin, nn.Module):
     ):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
+
         self.num_heads = num_heads
         self.dropout = dropout
         self._qkv_same_embed_dim = (
@@ -75,6 +76,18 @@ class MultiHeadAttention(BNNMixin, nn.Module):
         self.embed_dim_head = embed_dim_all_heads // num_heads
         self.bias = bias
 
+    # def reset_parameters(
+    #     self,
+    # ) -> None:
+    #     # TODO: Do we need to override this to get the right initialization for the embeddings for muP?
+
+    # def parameters_and_lrs(
+    #     self,
+    #     lr: float,
+    #     optimizer: Literal["SGD", "Adam"] = "SGD",
+    # ) -> list[dict[str, Tensor | float]]:
+    #     # TODO: Do we need to override this to get the right learning rates for the embeddings for muP?
+
     def forward(
         self,
         query: Float[Tensor, "*sample batch query_head query_token embed_dim_q"],
@@ -97,9 +110,10 @@ class MultiHeadAttention(BNNMixin, nn.Module):
                 (see :class:`~torch.nn.attention.bias.CausalBias`) when the mask is a non-square matrix.
                 An error is thrown if both ``attn_mask`` and ``is_causal`` are set.
         """
-        # Step 1. Apply input projection
+        # Step 1: Apply input projections
         if self._qkv_same_embed_dim:
             if query is key and key is value:
+                # Self-attention
                 result = self.packed_proj(query)
                 query, key, value = torch.chunk(result, 3, dim=-1)
             else:
@@ -123,21 +137,29 @@ class MultiHeadAttention(BNNMixin, nn.Module):
             key = self.k_proj(key)
             value = self.v_proj(value)
 
-        # Step 2. Split heads and prepare for SDPA
+        # Step 2: Split heads and prepare for scaled dot-product attention
+
         # reshape query, key, value to separate by head
-        # (N, L_t, embed_dim_all_heads) -> (N, L_t, num_heads, embed_dim_head) -> (N, num_heads, L_t, embed_dim_head)
+        # (batch_size, seq_length_out, embed_dim_all_heads)
+        # -> (batch_size, seq_length_out, num_heads, embed_dim_head)
+        # -> (batch_size, num_heads, seq_length_out, embed_dim_head)
         query = query.unflatten(-1, [self.num_heads, self.embed_dim_head]).transpose(
             1, 2
         )
-        # (N, L_s, embed_dim_all_heads) -> (N, L_s, num_heads, embed_dim_head) -> (N, num_heads, L_s, embed_dim_head)
+        # (batch_size, seq_length_in, embed_dim_all_heads)
+        # -> (batch_size, seq_length_in, num_heads, embed_dim_head)
+        # -> (batch_size, num_heads, seq_length_in, embed_dim_head)
         key = key.unflatten(-1, [self.num_heads, self.embed_dim_head]).transpose(1, 2)
-        # (N, L_s, embed_dim_all_heads) -> (N, L_s, num_heads, embed_dim_head) -> (N, num_heads, L_s, embed_dim_head)
+
+        # (batch_size, seq_length_in, embed_dim_all_heads)
+        # -> (batch_size, seq_length_in, num_heads, embed_dim_head)
+        # -> (batch_size, num_heads, seq_length_in, embed_dim_head)
         value = value.unflatten(-1, [self.num_heads, self.embed_dim_head]).transpose(
             1, 2
         )
 
-        # Step 3. Run SDPA
-        # (N, num_heads, L_t, embed_dim_head)
+        # Step 3: Run scaled dot-product attention
+        # (batch_size, num_heads, seq_length_out, embed_dim_head)
         attn_output = F.scaled_dot_product_attention(
             query,
             key,
@@ -146,11 +168,14 @@ class MultiHeadAttention(BNNMixin, nn.Module):
             dropout_p=self.dropout,
             is_causal=is_causal,
         )
-        # (N, num_heads, L_t, embed_dim_head) -> (N, L_t, num_heads, embed_dim_head) -> (N, L_t, embed_dim_all_heads)
+        # (batch_size, num_heads, seq_length_out, embed_dim_head)
+        # -> (batch_size, seq_length_out, num_heads, embed_dim_head)
+        # -> (batch_size, seq_length_out, embed_dim_all_heads)
         attn_output = attn_output.transpose(1, 2).flatten(-2)
 
         # Step 4. Apply output projection
-        # (N, L_t, embed_dim_all_heads) -> (N, L_t, E_out)
+        # (batch_size, seq_length_out, embed_dim_all_heads)
+        # -> (batch_size, seq_length_out, embed_dim_out)
         attn_output = self.out_proj(attn_output)
 
         return attn_output

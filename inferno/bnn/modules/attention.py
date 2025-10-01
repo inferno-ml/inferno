@@ -227,7 +227,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
             attn_output,
             sample_shape=sample_shape,
             generator=generator,
-            input_contains_samples=input_contains_samples,
+            input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
 

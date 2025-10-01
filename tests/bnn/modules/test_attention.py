@@ -141,20 +141,65 @@ def test_forward_is_deterministic_given_generator(
     npt.assert_allclose(output1.detach().numpy(), output2.detach().numpy())
 
 
-# @pytest.mark.parametrize("sample_shape", [(), (1,), (2,), (3, 2)])
-# @pytest.mark.parametrize("batch_shape", [(), (1,), (3,)])
-# @pytest.mark.parametrize(
-#     "layer",
-#     [
-#         bnn.Linear(5, 3, cov=params.FactorizedCovariance()),
-#         bnn.Linear(3, 2, bias=False, cov=params.LowRankCovariance(2)),
-#         bnn.Linear(3, 2, bias=False, cov=None),
-#     ],
-# )
-# def test_shape(sample_shape, batch_shape, layer):
-#     """Test whether the output shape is correct."""
-#     generator = torch.Generator().manual_seed(0)
-#     input = torch.randn(*batch_shape, linear_layer.in_features, generator=generator)
-#     output = linear_layer(input, sample_shape=sample_shape, generator=generator)
+@pytest.mark.parametrize(
+    "layer,is_self_attention",
+    [
+        (
+            bnn.MultiheadAttention(
+                embed_dim=32,
+                num_heads=4,
+                cov=params.FactorizedCovariance(),
+            ),
+            True,
+        ),
+        (
+            bnn.MultiheadAttention(
+                embed_dim=32,
+                num_heads=4,
+                bias=True,
+                cov=params.LowRankCovariance(4),
+            ),
+            True,
+        ),
+        (
+            bnn.MultiheadAttention(
+                embed_dim=32,
+                num_heads=4,
+                kdim=4,
+                vdim=12,
+                cov=params.FactorizedCovariance(),
+            ),
+            False,
+        ),
+    ],
+)
+@pytest.mark.parametrize("sample_shape", [(), (1,), (2,), (3, 2)])
+@pytest.mark.parametrize("batch_shape", [(), (1,), (3,)])
+def test_shape(sample_shape, batch_shape, layer, is_self_attention):
+    """Test whether the output shape is correct."""
+    generator = torch.Generator().manual_seed(0)
 
-#     assert output.shape == (*sample_shape, *batch_shape, linear_layer.out_features)
+    num_tokens = 128
+    embed_dim = layer.embed_dim
+    kdim = layer.kdim
+    vdim = layer.vdim
+    query = torch.randn(*batch_shape, num_tokens, embed_dim, generator=generator)
+    if is_self_attention:
+        key = query
+        value = query
+    else:
+        key = torch.randn(
+            *batch_shape,
+            num_tokens,
+            embed_dim if kdim is None else kdim,
+            generator=generator,
+        )
+        value = torch.randn(
+            *batch_shape,
+            num_tokens,
+            embed_dim if vdim is None else vdim,
+            generator=generator,
+        )
+    output = layer(query, key, value, sample_shape=sample_shape, generator=generator)
+
+    assert output.shape == (*sample_shape, *batch_shape, num_tokens, embed_dim)

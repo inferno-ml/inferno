@@ -33,6 +33,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
     :param bias: Whether to add bias to query, key, value and output projections.
     :param kdim: Dimensionality of the key embeddings.
     :param vdim: Dimensionality of the value embeddings.
+    :param embed_dim_out: Dimensionality of the output embeddings. If ``None``, set to ``embed_dim``.
     :param cov: Covariance structure of the weights. Either a single covariance structure used in all
         linear projections, or a dictionary with keys ``k``, ``q``, ``v`` and ``out`` and values containing
         either covariance structures or ``None``.
@@ -42,8 +43,6 @@ class MultiheadAttention(BNNMixin, nn.Module):
     :param dtype: Data type of the parameters.
     """
 
-    # TODO: Add argument: out_proj=True? That would allow easier toy experiments with a single attention head via out_proj=False.
-
     def __init__(
         self,
         embed_dim: int,
@@ -52,6 +51,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         bias: bool = True,
         kdim: int | None = None,
         vdim: int | None = None,
+        embed_dim_out: int | None = None,
         cov: (
             params.FactorizedCovariance | dict[params.FactorizedCovariance] | None
         ) = None,
@@ -71,6 +71,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         if embed_dim % num_heads != 0:
             raise ValueError("Embedding dimension is not divisible by num_heads.")
         self.head_dim = embed_dim // num_heads
+        self.embed_dim_out = embed_dim_out if embed_dim_out is not None else embed_dim
 
         if cov is None:
             cov = {key: None for key in ["q", "k", "v", "out"]}
@@ -78,8 +79,8 @@ class MultiheadAttention(BNNMixin, nn.Module):
             cov = {key: copy.deepcopy(cov) for key in ["q", "k", "v", "out"]}
 
         self.q_proj = bnn.Linear(
-            embed_dim,
-            embed_dim,
+            self.embed_dim,
+            self.embed_dim,
             bias=bias,
             cov=cov["q"],
             parametrization=parametrization,
@@ -87,7 +88,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         )
         self.k_proj = bnn.Linear(
             self.kdim,
-            embed_dim,
+            self.embed_dim,
             bias=bias,
             cov=cov["k"],
             parametrization=parametrization,
@@ -95,15 +96,15 @@ class MultiheadAttention(BNNMixin, nn.Module):
         )
         self.v_proj = bnn.Linear(
             self.vdim,
-            embed_dim,
+            self.embed_dim,
             bias=bias,
             cov=cov["v"],
             parametrization=parametrization,
             **factory_kwargs,
         )
         self.out_proj = bnn.Linear(
-            embed_dim,
-            embed_dim,
+            self.embed_dim,
+            self.embed_dim_out,
             bias=bias,
             parametrization=parametrization,
             cov=cov["out"],

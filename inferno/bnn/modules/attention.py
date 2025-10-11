@@ -34,6 +34,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
     :param kdim: Dimensionality of the key embeddings.
     :param vdim: Dimensionality of the value embeddings.
     :param embed_dim_out: Dimensionality of the output embeddings. If ``None``, set to ``embed_dim``.
+    :param out_proj: Whether to include the output projection layer.
     :param cov: Covariance structure of the weights. Either a single covariance structure used in all
         linear projections, or a dictionary with keys ``k``, ``q``, ``v`` and ``out`` and values containing
         either covariance structures or ``None``.
@@ -42,6 +43,8 @@ class MultiheadAttention(BNNMixin, nn.Module):
     :param device: Device on which to instantiate the parameters.
     :param dtype: Data type of the parameters.
     """
+
+    # TODO: enable covariances that are block-diagonal by attention head
 
     def __init__(
         self,
@@ -52,6 +55,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         kdim: int | None = None,
         vdim: int | None = None,
         embed_dim_out: int | None = None,
+        out_proj: bool = True,
         cov: (
             params.FactorizedCovariance | dict[params.FactorizedCovariance] | None
         ) = None,
@@ -102,26 +106,22 @@ class MultiheadAttention(BNNMixin, nn.Module):
             parametrization=parametrization,
             **factory_kwargs,
         )
-        self.out_proj = bnn.Linear(
-            self.embed_dim,
-            self.embed_dim_out,
-            bias=bias,
-            parametrization=parametrization,
-            cov=cov["out"],
-            **factory_kwargs,
+        self.out_proj = (
+            bnn.Linear(
+                self.embed_dim,
+                self.embed_dim_out,
+                bias=bias,
+                cov=cov["out"],
+                parametrization=parametrization,
+                **factory_kwargs,
+            )
+            if out_proj
+            else None
         )
 
-    # def reset_parameters(
-    #     self,
-    # ) -> None:
-    #     # TODO: Do we need to override this to get the right initialization for the embeddings for muP?
-
-    # def parameters_and_lrs(
-    #     self,
-    #     lr: float,
-    #     optimizer: Literal["SGD", "Adam"] = "SGD",
-    # ) -> list[dict[str, Tensor | float]]:
-    #     # TODO: Do we need to override this to get the right learning rates for the embeddings for muP?
+    # def reset_parameters(self):
+    #     return super().reset_parameters()
+    # TODO: initialize biases to zero? Double check muP and pyotrch implementation
 
     def forward(
         self,
@@ -222,15 +222,16 @@ class MultiheadAttention(BNNMixin, nn.Module):
 
         # Step 4. Apply output projection
 
-        # (batch_size, seq_length_out, embed_dim_all_heads)
-        # -> (batch_size, seq_length_out, embed_dim_out)
-        attn_output = self.out_proj(
-            attn_output,
-            sample_shape=sample_shape,
-            generator=generator,
-            input_contains_samples=True,
-            parameter_samples=parameter_samples,
-        )
+        if self.out_proj is not None:
+            # (batch_size, seq_length_out, embed_dim_all_heads)
+            # -> (batch_size, seq_length_out, embed_dim_out)
+            attn_output = self.out_proj(
+                attn_output,
+                sample_shape=sample_shape,
+                generator=generator,
+                input_contains_samples=True,
+                parameter_samples=parameter_samples,
+            )
 
         return attn_output
 

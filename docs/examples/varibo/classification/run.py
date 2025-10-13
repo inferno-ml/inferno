@@ -367,3 +367,4 @@ def toy_classification(
 
 if __name__ == "__main__":
     fire.Fire(toy_classification)
+    

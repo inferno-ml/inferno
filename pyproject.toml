@@ -45,6 +45,7 @@ examples = [
     "fire>=0.7.0",
     "matplotlib>=3.10.0",
     "seaborn>=0.13.2",
+    "scikit-learn>=1.5.0",
     "torchmetrics>=1.6.1",
     "tqdm>=4.67.1",
 ]

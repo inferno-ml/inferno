@@ -119,10 +119,6 @@ class MultiheadAttention(BNNMixin, nn.Module):
             else None
         )
 
-    # def reset_parameters(self):
-    #     return super().reset_parameters()
-    # TODO: initialize biases to zero? Double check muP and pyotrch implementation
-
     def forward(
         self,
         query: Float[Tensor, "*sample batch query_token embed_dim"],

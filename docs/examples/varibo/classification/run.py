@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
 import torch
 import torchmetrics
 import tqdm
-
-from sklearn.datasets import make_moons
-from sklearn.model_selection import train_test_split
 
 import inferno
 
@@ -44,9 +43,14 @@ def toy_classification(
         pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 
     # Generate training and test data
-    X, y = make_moons(n_samples=num_train_data + num_test_data, noise=0.2, random_state=seed)
+    X, y = make_moons(
+        n_samples=num_train_data + num_test_data, noise=0.2, random_state=seed
+    )
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=num_test_data / (num_train_data + num_test_data), random_state=seed
+        X,
+        y,
+        test_size=num_test_data / (num_train_data + num_test_data),
+        random_state=seed,
     )
 
     X_train_t = torch.tensor(X_train, dtype=dtype)
@@ -73,31 +77,31 @@ def toy_classification(
     if plot_data:
         with torch.no_grad():
             fig, ax = plt.subplots(figsize=(4, 4))
-            
+
             # Training data
             ax.scatter(
-                X_train[:, 0], 
-                X_train[:, 1], 
-                c=y_train, 
-                cmap="RdBu", 
-                edgecolor="k", 
-                s=30, 
-                label="Training data"
+                X_train[:, 0],
+                X_train[:, 1],
+                c=y_train,
+                cmap="RdBu",
+                edgecolor="k",
+                s=30,
+                label="Training data",
             )
-            
+
             # Test data
             ax.scatter(
-                X_test[:, 0], 
-                X_test[:, 1], 
-                c=y_test, 
-                cmap="RdBu", 
-                alpha=0.3, 
-                s=20, 
-                label="Test data"
+                X_test[:, 0],
+                X_test[:, 1],
+                c=y_test,
+                cmap="RdBu",
+                alpha=0.3,
+                s=20,
+                label="Test data",
             )
-            
+
             ax.set_aspect("equal")
-            
+
             # Legend
             handles, labels = ax.get_legend_handles_labels()
             fig.legend(
@@ -110,11 +114,12 @@ def toy_classification(
                 ncol=3,
                 frameon=False,
             )
-            
-            plt.tight_layout()
-            plt.savefig(pathlib.Path(outdir) / "data.svg", bbox_inches="tight", pad_inches=0.1)
-            plt.close(fig)
 
+            plt.tight_layout()
+            plt.savefig(
+                pathlib.Path(outdir) / "data.svg", bbox_inches="tight", pad_inches=0.1
+            )
+            plt.close(fig)
 
     # --8<-- [start:model]
     from torch import nn
@@ -146,8 +151,7 @@ def toy_classification(
     # Optimizer
     optimizer = torch.optim.SGD(
         params=model.parameters_and_lrs(
-            lr=lr, 
-            optimizer="SGD"
+            lr=lr, optimizer="SGD"
         ),  # Sets module-specific learning rates
         lr=lr,
         momentum=0.9,
@@ -177,28 +181,22 @@ def toy_classification(
         with torch.no_grad():
             # Model evaluation
             model.eval()
-            
+
             test_acc_metric = torchmetrics.classification.BinaryAccuracy()
-            
+
             test_acc_metric.reset()
 
             for X_batch, y_batch in test_dataloader:
-                
+
                 X_batch = X_batch.to(device=device)
                 y_batch = y_batch.to(device=device)
-                
-                logits_s = model(
-                    X_batch, 
-                    sample_shape=(128,)
-                )
-                
+
+                logits_s = model(X_batch, sample_shape=(128,))
+
                 probs = torch.sigmoid(logits_s).mean(dim=0)
                 preds = (probs >= 0.5).float()
-                
-                test_acc_metric.update(
-                    preds.view(-1),
-                    y_batch.view(-1)
-                )
+
+                test_acc_metric.update(preds.view(-1), y_batch.view(-1))
 
             test_acc = test_acc_metric.compute().item()
 
@@ -224,11 +222,11 @@ def toy_classification(
         # Plot learning curves
         with torch.no_grad():
             fig, axs = plt.subplots(
-                nrows=1, 
+                nrows=1,
                 ncols=2,
                 figsize=(8, 3),
             )
-            
+
             # Train loss
             sns.lineplot(
                 data=results_df,
@@ -239,7 +237,7 @@ def toy_classification(
                 alpha=0.8,
                 legend=True,
             )
-                        
+
             # Test accuracy
             sns.lineplot(
                 data=results_df,
@@ -250,11 +248,11 @@ def toy_classification(
                 alpha=0.8,
                 legend=False,
             )
-            
+
             # Axes
             axs[0].set(yscale="log", title="Train Loss")
             axs[1].set(title="Test Accuracy")
-            
+
             # Legend
             handles, labels = axs[0].get_legend_handles_labels()
             fig.legend(
@@ -268,12 +266,12 @@ def toy_classification(
                 frameon=False,
             )
             axs[0].get_legend().remove()
-            
+
             plt.tight_layout()
             plt.savefig(
-                pathlib.Path(outdir) / "learning_curves.svg", 
-                bbox_inches="tight", 
-                pad_inches=0.1
+                pathlib.Path(outdir) / "learning_curves.svg",
+                bbox_inches="tight",
+                pad_inches=0.1,
             )
             plt.close()
 
@@ -283,41 +281,22 @@ def toy_classification(
         y_min, y_max = X_train[:, 1].min() - 0.5, X_train[:, 1].max() + 0.5
 
         xx, yy = np.meshgrid(
-            np.linspace(x_min, x_max, 200),
-            np.linspace(y_min, y_max, 200)
+            np.linspace(x_min, x_max, 200), np.linspace(y_min, y_max, 200)
         )
 
-        grid = np.stack(
-            [xx.ravel(),
-             yy.ravel()],
-            axis=-1
-        )
+        grid = np.stack([xx.ravel(), yy.ravel()], axis=-1)
 
-        grid_t = torch.tensor(
-            grid,
-            dtype=dtype,
-            device=device
-        )
+        grid_t = torch.tensor(grid, dtype=dtype, device=device)
 
         with torch.no_grad():
             model.eval()
-            preds = model(
-                grid_t,
-                sample_shape=(256,)
-            )
+            preds = model(grid_t, sample_shape=(256,))
             probs = torch.sigmoid(preds).mean(dim=0).cpu().numpy().squeeze()
 
         Z = probs.reshape(xx.shape)
         fig, ax = plt.subplots(figsize=(4, 4))
 
-        cs = ax.contourf(
-            xx,
-            yy,
-            Z,
-            levels=20,
-            alpha=0.8,
-            cmap="RdBu"
-        )
+        cs = ax.contourf(xx, yy, Z, levels=20, alpha=0.8, cmap="RdBu")
 
         # Training data
         train_scatter = ax.scatter(
@@ -327,7 +306,7 @@ def toy_classification(
             cmap="RdBu",
             edgecolor="k",
             s=30,
-            label="Training data"
+            label="Training data",
         )
 
         # Test data
@@ -338,7 +317,7 @@ def toy_classification(
             cmap="RdBu",
             alpha=0.3,
             s=20,
-            label="Test data"
+            label="Test data",
         )
 
         ax.set_aspect("equal")
@@ -360,11 +339,10 @@ def toy_classification(
         plt.savefig(
             pathlib.Path(outdir) / "decision_boundary.svg",
             bbox_inches="tight",
-            pad_inches=0.1
+            pad_inches=0.1,
         )
         plt.close()
 
 
 if __name__ == "__main__":
     fire.Fire(toy_classification)
-    

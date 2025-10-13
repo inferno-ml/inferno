@@ -5,10 +5,10 @@ from torch import Tensor, nn
 
 
 def inputs_and_expanded_targets(inputs, targets):
-    """Ensure loss can be computed with additional dimensions of (sampled) predictions in input.
+    """Ensure loss can be computed with additional dimensions of (sampled) predictions in inputs.
 
-    :param input: Inputs (predictions).
-    :param target: Targets.
+    :param inputs: Inputs (predictions).
+    :param targets: Targets.
     """
 
     if (

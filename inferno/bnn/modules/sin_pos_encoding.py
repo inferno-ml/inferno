@@ -1,8 +1,12 @@
 import math
+from typing import TYPE_CHECKING
 
-from jaxtyping import Float
 import torch
 from torch import Tensor, nn
+
+if TYPE_CHECKING:
+    from jaxtyping import Float
+    from torch import Tensor
 
 
 class SinusoidalPositionalEncoding(nn.Module):

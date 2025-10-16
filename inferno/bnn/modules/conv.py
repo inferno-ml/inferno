@@ -34,8 +34,8 @@ class _ConvNd(BNNMixin, nn.Module):
         layer_type: Literal["input", "hidden", "output"] = "hidden",
         cov: params.FactorizedCovariance | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
-        device: torch.device = None,
-        dtype: torch.dtype = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
 
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -380,8 +380,8 @@ class Conv1d(_ConvNd):
         layer_type: Literal["input", "hidden", "output"] = "hidden",
         cov: params.FactorizedCovariance | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
-        device: torch.device = None,
-        dtype: torch.dtype = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -475,8 +475,8 @@ class Conv2d(_ConvNd):
         layer_type: Literal["input", "hidden", "output"] = "hidden",
         cov: params.FactorizedCovariance | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
-        device: torch.device = None,
-        dtype: torch.dtype = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -565,8 +565,8 @@ class Conv3d(_ConvNd):
         layer_type: Literal["input", "hidden", "output"] = "hidden",
         cov: params.FactorizedCovariance | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
-        device: torch.device = None,
-        dtype: torch.dtype = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         kernel_size_ = _triple(kernel_size)

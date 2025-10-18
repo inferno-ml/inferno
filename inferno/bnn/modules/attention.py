@@ -201,6 +201,10 @@ class MultiheadAttention(BNNMixin, nn.Module):
 
         # Step 3: Run scaled dot-product attention
 
+        # TODO: If the q,k,v projections are all deterministic, this is quite inefficient,
+        # since the output of each linear layer gets expanded to the number of samples.
+        # Make sure in that case we only expand the output to the number of samples when needed.
+
         # (batch_size, num_heads, seq_length_out, embed_dim_head)
         attn_output = F.scaled_dot_product_attention(
             query,

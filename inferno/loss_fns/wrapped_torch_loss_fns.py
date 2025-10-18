@@ -28,7 +28,7 @@ def inputs_and_expanded_targets(inputs, targets):
             *inputs.shape[0:num_extra_dims], *(targets.ndim * (-1,))
         ).reshape(-1, *targets.shape[1:])
 
-        inputs = inputs.view(-1, *inputs.shape[num_extra_dims + 1 :])
+        inputs = inputs.reshape(-1, *inputs.shape[num_extra_dims + 1 :])
     elif num_extra_dims < 0:
         raise ValueError(
             f"Shapes of input and targets do not match (input.ndim={inputs.ndim}, target.ndim={targets.ndim}).",

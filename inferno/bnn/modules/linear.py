@@ -25,7 +25,7 @@ class Linear(BNNMixin, nn.Module):
     :param cov: Covariance object for the parameters.
     :param parametrization: The parametrization to use. Defines the initialization
         and learning rate scaling for the parameters of the module.
-    :param device: Device on which to create the parameters.
+    :param device: Device on which to instantiate the parameters.
     :param dtype: Data type of the parameters.
     """
 

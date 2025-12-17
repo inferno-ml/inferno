@@ -18,7 +18,10 @@ def inputs_and_expanded_targets(inputs, targets):
     ):
         num_extra_dims = inputs.ndim - targets.ndim
         if num_extra_dims > 0 and not (inputs.shape[num_extra_dims:] == targets.shape):
-            raise ValueError("Shape mismatch between input and target.")
+            raise ValueError(
+                "Shape mismatch between input and target. "
+                "This could either be caused by incorrect target shape or an incorrect target dtype."
+            )
     else:
         # If targets are classes, the inputs should have one additional dimension (for probabilities)
         num_extra_dims = inputs.ndim - targets.ndim - 1

@@ -18,8 +18,8 @@ def toy_classification(
     num_train_data: int = 200,
     num_test_data: int = 400,
     batch_size: int = 32,
-    num_hidden_layers: int = 2,
-    hidden_width: int = 32,
+    num_hidden_layers: int = 3,
+    hidden_width: int = 64,
     num_epochs: int = 200,
     lr: float = 1e-2,
     dtype: torch.dtype = torch.float32,
@@ -44,7 +44,7 @@ def toy_classification(
 
     # Generate training and test data
     X, y = make_moons(
-        n_samples=num_train_data + num_test_data, noise=0.2, random_state=seed
+        n_samples=num_train_data + num_test_data, noise=0.1, random_state=seed
     )
     X_train, X_test, y_train, y_test = train_test_split(
         X,

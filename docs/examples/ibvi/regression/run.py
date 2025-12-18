@@ -137,7 +137,7 @@ def toy_regression(
     # --8<-- [start:model]
     from torch import nn
 
-    from inferno import bnn
+    from inferno import bnn, loss_fns
 
     model = bnn.Sequential(
         inferno.models.MLP(
@@ -159,7 +159,7 @@ def toy_regression(
 
     # --8<-- [start:training]
     # Loss function
-    loss_fn = nn.MSELoss()
+    loss_fn = loss_fns.MSELoss()
 
     # Optimizer
     optimizer = torch.optim.SGD(
@@ -215,7 +215,7 @@ def toy_regression(
             results_list.append(
                 {
                     "Dataset": train_dataset.__class__.__name__,
-                    "Model": "VarIBO MLP",
+                    "Model": "IBVI MLP",
                     "Number of Parameters": sum(
                         p.numel() for p in model.parameters() if p.requires_grad
                     ),

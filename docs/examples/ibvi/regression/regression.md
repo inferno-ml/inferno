@@ -17,7 +17,7 @@ We begin by generating some synthetic training and test data.
 Next, we define a fully-connected stochastic neural network using a pre-defined [``models.MLP``](../../../api/models.md#inferno.models.MLP).
 
 ```python title="Model"
---8<-- "docs/examples/varibo/regression/run.py:model"
+--8<-- "docs/examples/ibvi/regression/run.py:model"
 ```
 
 1.  PyTorch ``nn.Module``s can be used as part of ``inferno`` models.
@@ -33,7 +33,7 @@ i.e. the average loss of the model when drawing weights from the variational dis
 In practice, for efficiency we only use a single sample per batch during training.
 
 ```python title="Training"
---8<-- "docs/examples/varibo/regression/run.py:training"
+--8<-- "docs/examples/ibvi/regression/run.py:training"
 ```
 
 ## Results

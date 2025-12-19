@@ -18,8 +18,8 @@ def toy_classification(
     num_train_data: int = 200,
     num_test_data: int = 400,
     batch_size: int = 32,
-    num_hidden_layers: int = 2,
-    hidden_width: int = 32,
+    num_hidden_layers: int = 3,
+    hidden_width: int = 64,
     num_epochs: int = 200,
     lr: float = 1e-2,
     dtype: torch.dtype = torch.float32,
@@ -44,7 +44,7 @@ def toy_classification(
 
     # Generate training and test data
     X, y = make_moons(
-        n_samples=num_train_data + num_test_data, noise=0.2, random_state=seed
+        n_samples=num_train_data + num_test_data, noise=0.1, random_state=seed
     )
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -53,13 +53,12 @@ def toy_classification(
         random_state=seed,
     )
 
-    X_train_t = torch.tensor(X_train, dtype=dtype)
-    y_train_t = torch.tensor(y_train, dtype=dtype).unsqueeze(-1)
-    X_test_t = torch.tensor(X_test, dtype=dtype)
-    y_test_t = torch.tensor(y_test, dtype=dtype).unsqueeze(-1)
-
-    train_dataset = torch.utils.data.TensorDataset(X_train_t, y_train_t)
-    test_dataset = torch.utils.data.TensorDataset(X_test_t, y_test_t)
+    train_dataset = torch.utils.data.TensorDataset(
+        torch.as_tensor(X_train, dtype=dtype), torch.as_tensor(y_train, dtype=dtype)
+    )
+    test_dataset = torch.utils.data.TensorDataset(
+        torch.as_tensor(X_test, dtype=dtype), torch.as_tensor(y_test, dtype=dtype)
+    )
 
     # Dataloader
     train_dataloader = torch.utils.data.DataLoader(
@@ -124,7 +123,7 @@ def toy_classification(
     # --8<-- [start:model]
     from torch import nn
 
-    from inferno import bnn
+    from inferno import bnn, loss_fns
 
     model = bnn.Sequential(
         inferno.models.MLP(
@@ -146,7 +145,7 @@ def toy_classification(
 
     # --8<-- [start:training]
     # Loss function
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = loss_fns.BCEWithLogitsLoss()
 
     # Optimizer
     optimizer = torch.optim.SGD(
@@ -169,7 +168,7 @@ def toy_classification(
 
             logits = model(X_batch)
 
-            loss = loss_fn(logits, y_batch.squeeze(-1))
+            loss = loss_fn(logits, y_batch)
 
             loss.backward()
             optimizer.step()
@@ -191,7 +190,7 @@ def toy_classification(
                 X_batch = X_batch.to(device=device)
                 y_batch = y_batch.to(device=device)
 
-                logits_s = model(X_batch, sample_shape=(128,))
+                logits_s = model(X_batch, sample_shape=(16,))
 
                 probs = torch.sigmoid(logits_s).mean(dim=0)
                 preds = (probs >= 0.5).float()
@@ -203,7 +202,7 @@ def toy_classification(
             results_list.append(
                 {
                     "Dataset": train_dataset.__class__.__name__,
-                    "Model": "VarIBO MLP",
+                    "Model": "IBVI MLP",
                     "Number of Parameters": sum(
                         p.numel() for p in model.parameters() if p.requires_grad
                     ),

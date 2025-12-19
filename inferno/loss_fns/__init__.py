@@ -1,5 +1,6 @@
 """Loss functions."""
 
+from .focal_loss import FocalLoss
 from .variational_free_energy import VariationalFreeEnergy
 from .wrapped_torch_loss_fns import (
     BCELoss,
@@ -18,6 +19,7 @@ __all__ = [
     "BCELoss",
     "BCEWithLogitsLoss",
     "CrossEntropyLoss",
+    "FocalLoss",
     "L1Loss",
     "MSELoss",
     "NLLLoss",

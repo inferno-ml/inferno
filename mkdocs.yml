@@ -6,10 +6,10 @@ repo_url: https://github.com/inferno-ml/inferno-torch
 nav:
   - Getting Started: index.md
   - Examples:
-      # - Variational Inference via the Implicit Bias of Optimization (VarIBO):
+      # - Variational Inference via the Implicit Bias of Optimization (IBVI):
       - Regression:
-          - Toy Data: examples/varibo/regression/regression.md
-      - Classification: examples/varibo/classification/classification.md
+          - Toy Data: examples/ibvi/regression/regression.md
+      - Classification: examples/ibvi/classification/classification.md
   - API Reference:
       - <code class="doc-symbol doc-symbol-heading">bnn</code>:
           - Modules: api/bnn/modules.md

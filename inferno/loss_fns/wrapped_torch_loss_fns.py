@@ -18,7 +18,14 @@ def inputs_and_expanded_targets(inputs, targets):
     ):
         num_extra_dims = inputs.ndim - targets.ndim
         if num_extra_dims > 0 and not (inputs.shape[num_extra_dims:] == targets.shape):
+<<<<<<< HEAD
             raise ValueError("Shape mismatch between input and target.")
+=======
+            raise ValueError(
+                "Shape mismatch between input and target. "
+                + "This could either be caused by incorrect target shape or an incorrect target dtype."
+            )
+>>>>>>> main
     else:
         # If targets are classes, the inputs should have one additional dimension (for probabilities)
         num_extra_dims = inputs.ndim - targets.ndim - 1
@@ -28,11 +35,19 @@ def inputs_and_expanded_targets(inputs, targets):
             *inputs.shape[0:num_extra_dims], *(targets.ndim * (-1,))
         ).reshape(-1, *targets.shape[1:])
 
+<<<<<<< HEAD
         inputs = inputs.view(-1, *inputs.shape[num_extra_dims + 1 :])
     elif num_extra_dims < 0:
         raise ValueError(
             f"Shapes of input and targets do not match (input.ndim={inputs.ndim}, target.ndim={targets.ndim}).",
             f" Only predictions may have extra dimensions.",
+=======
+        inputs = inputs.reshape(-1, *inputs.shape[num_extra_dims + 1 :])
+    elif num_extra_dims < 0:
+        raise ValueError(
+            f"Shapes of input and targets do not match (input.ndim={inputs.ndim}, target.ndim={targets.ndim}). "
+            + f"Only predictions may have extra dimensions.",
+>>>>>>> main
         )
 
     return inputs, targets

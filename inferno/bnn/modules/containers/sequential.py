@@ -33,7 +33,7 @@ class Sequential(BNNMixin, nn.Sequential):
     :param *args: Any number of modules to add to the container.
     :param parametrization: The parametrization to use. If `None`, the
         parametrization of the modules in the container will be used. If
-        a :class:`~inferno.bnn.params.Parametrization` object is passed,
+        a [``Parametrization``][inferno.bnn.params.Parametrization] object is passed,
         it will be used for all modules in the container.
     """
 

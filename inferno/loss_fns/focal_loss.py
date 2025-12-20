@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 __all__ = ["FocalLoss"]
 
 
-class FocalLoss(nn.Module):
+class FocalLoss(nn.modules.loss._WeightedLoss):
     r"""The focal loss rescales the cross entropy loss with a factor that induces a regularizer on the output class probabilities.
 
-    It is useful to address class imbalance ([Lin et al. 2017](https://arxiv.org/abs/1708.02002)) and to improve
+    The focal loss is useful to address class imbalance ([Lin et al. 2017](https://arxiv.org/abs/1708.02002)) and to improve
     calibration ([Mukhoti et al. 2020](http://arxiv.org/abs/2002.09437)). The loss on a single datapoint is given by
 
     $$
@@ -47,12 +47,10 @@ class FocalLoss(nn.Module):
         weight: Tensor | None = None,
         reduction: Literal["none", "sum", "mean"] = "mean",
     ):
-        super().__init__()
+        super().__init__(weight=weight, reduction=reduction)
         self.task = task
         self.gamma = gamma
         self.num_classes = num_classes
-        self.weight = weight
-        self.reduction = reduction
         if reduction not in ["none", "sum", "mean"]:
             raise ValueError(
                 f"Unsupported reduction '{self.reduction}'. Use 'none', 'sum', or 'mean'."

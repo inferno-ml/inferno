@@ -142,7 +142,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
                 A float mask of the same type as query, key, value that is added to the attention score.
         :param is_causal: If set to true, the attention masking is a lower triangular matrix when the mask is a
                 square matrix. The attention masking has the form of the upper left causal bias due to the alignment
-                (see :class:`~torch.nn.attention.bias.CausalBias`) when the mask is a non-square matrix.
+                (see [``torch.nn.attention.bias.CausalBias``][]) when the mask is a non-square matrix.
                 An error is thrown if both ``attn_mask`` and ``is_causal`` are set.
         :param sample_shape: Shape of samples.
         :param generator: Random number generator.

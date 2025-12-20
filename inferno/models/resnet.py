@@ -674,7 +674,7 @@ class Bottleneck(bnn.BNNMixin, nn.Module):
 class ResNet18(ResNet):
     """ResNet-18
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -709,7 +709,7 @@ class ResNet18(ResNet):
 class ResNet34(ResNet):
     """ResNet-34
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -744,7 +744,7 @@ class ResNet34(ResNet):
 class ResNet50(ResNet):
     """ResNet-50
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -779,7 +779,7 @@ class ResNet50(ResNet):
 class ResNet101(ResNet):
     """ResNet-101
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -814,7 +814,7 @@ class ResNet101(ResNet):
 class ResNeXt50_32X4D(ResNet):
     """ResNext-50 (32x4d)
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -854,7 +854,7 @@ class ResNeXt50_32X4D(ResNet):
 class ResNeXt101_32X8D(ResNet):
     """ResNext-101 (32x8d)
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -894,7 +894,7 @@ class ResNeXt101_32X8D(ResNet):
 class ResNeXt101_64X4D(ResNet):
     """ResNext-101 (32x4d)
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -937,7 +937,7 @@ class WideResNet50(ResNet):
     Architecture described in [Wide Residual Networks](https://arxiv.org/abs/1605.06431). The model is the same
     as a ResNet except for the bottleneck number of channels which is twice larger in every block.
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(
@@ -979,7 +979,7 @@ class WideResNet101(ResNet):
     Architecture described in [Wide Residual Networks](https://arxiv.org/abs/1605.06431). The model is the same
     as a ResNet except for the bottleneck number of channels which is twice larger in every block.
 
-    :param **kwargs: Additional keyword arguments passed on to :class:`~inferno.bnn.models.ResNet`.
+    :param **kwargs: Additional keyword arguments passed on to [``ResNet``][inferno.models.ResNet].
     """
 
     def __init__(

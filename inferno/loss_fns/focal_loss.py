@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ["FocalLoss"]
 
 
-class FocalLoss(nn.modules.loss._WeightedLoss):
+class FocalLoss(torch.nn.modules.loss._WeightedLoss):
     r"""The focal loss rescales the cross entropy loss with a factor that induces a regularizer on the output class probabilities.
 
     The focal loss is useful to address class imbalance ([Lin et al. 2017](https://arxiv.org/abs/1708.02002)) and to improve

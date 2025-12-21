@@ -37,8 +37,6 @@ class Sequential(BNNMixin, nn.Sequential):
         it will be used for all modules in the container.
     """
 
-    # TODO: sample parameters jointly depending on the passed Covariance object
-
     @overload
     def __init__(
         self,

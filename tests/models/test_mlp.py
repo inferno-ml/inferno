@@ -105,7 +105,7 @@ def test_same_as_torchvision_mlp(inferno_mlp, torchvision_mlp):
             activation_layer=nn.SiLU,
             dropout=0.1,
             bias=True,
-            cov=[None, None, params.KroneckerCovariance()],
+            cov=[None, None, params.FactorizedCovariance()],
         ),
     ],
 )
@@ -128,3 +128,55 @@ def test_draw_samples(model):
 
     # Check the shape of the output
     assert output.shape == (*sample_shape, batch_size, in_size)
+
+
+# @pytest.mark.skip(
+#     "torch.compile currently doesn't work due to the use of Generator in forward."
+# )
+@pytest.mark.parametrize(
+    "model",
+    [
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=None,
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=params.FactorizedCovariance(),
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[16, 16],
+            out_size=1,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+    ],
+)
+def test_torch_compile(model):
+    """Test whether the model can be compiled using torch.compile."""
+
+    # Compile model
+    compiled_model = torch.compile(model)
+
+    # Try using compiled model
+    input = torch.randn(32, 10)
+    compiled_model(input)
+
+    # Run compiled model a second time and check for equivalence to original model
+    npt.assert_allclose(
+        compiled_model(input).detach().numpy(), model(input).detach().numpy()
+    )

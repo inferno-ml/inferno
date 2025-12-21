@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import torch
-from torch import nn
+from torch import distributions, nn
 
 from inferno import bnn
 
@@ -109,6 +109,7 @@ class MSELossVR(nn.modules.loss._Loss):
     # TODO: Give all bnn.BNNMixin layers a .predictive(input) -> torch.distributions.Distribution function and if Parameters are GaussianParameters
     # then ensure the predictive(input) function is implemented (conditional of samples of the input).
     # TODO: Implement forward pass with sample_shape=None as forward pass with just mean_params (and use that for efficiency in linear layers)
+    # TODO: tests for .predictive, .representation, and all losses
 
 
 class BCEWithLogitsLossVR(nn.modules.loss._Loss):
@@ -173,15 +174,18 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
         )
 
         # Compute loss
-        loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
-            predictive_conditioned_on_representation.mean,
-            dim=-1,
-            index=target.view(-1, 1),
-        ) + torch.logsumexp(
-            predictive_conditioned_on_representation.mean
-            + 0.5 * predictive_conditioned_on_representation.variance,
-            dim=-1,
-        )
+        if isinstance(predictive_conditioned_on_representation, distributions.Normal):
+            loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
+                predictive_conditioned_on_representation.mean,
+                dim=-1,
+                index=target.view(-1, 1),
+            ) + torch.logsumexp(
+                predictive_conditioned_on_representation.mean
+                + 0.5 * predictive_conditioned_on_representation.variance,
+                dim=-1,
+            )
+        else:
+            raise NotImplementedError
 
         # Reduction
         if self.reduction == "mean":
@@ -257,15 +261,18 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
         )
 
         # Compute loss
-        loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
-            predictive_conditioned_on_representation.mean,
-            dim=-1,
-            index=target.view(-1, 1),
-        ) + torch.logsumexp(
-            predictive_conditioned_on_representation.mean
-            + 0.5 * predictive_conditioned_on_representation.variance,
-            dim=-1,
-        )
+        if isinstance(predictive_conditioned_on_representation, distributions.Normal):
+            loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
+                predictive_conditioned_on_representation.mean,
+                dim=-1,
+                index=target.view(-1, 1),
+            ) + torch.logsumexp(
+                predictive_conditioned_on_representation.mean
+                + 0.5 * predictive_conditioned_on_representation.variance,
+                dim=-1,
+            )
+        else:
+            raise NotImplementedError
 
         # Reduction
         if self.reduction == "mean":

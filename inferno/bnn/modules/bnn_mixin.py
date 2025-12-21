@@ -4,7 +4,7 @@ import abc
 from typing import TYPE_CHECKING, Callable, Literal
 
 import torch
-from torch import nn
+from torch import distributions, nn
 
 from ..params import MaximalUpdate, Parametrization
 
@@ -130,6 +130,25 @@ class BNNMixin(abc.ABC):
         :param parameter_samples: Dictionary of parameter samples. Used to pass
             sampled parameters to the module. Useful to jointly sample parameters
             of multiple layers.
+        """
+        raise NotImplementedError
+
+    def predictive(
+        self,
+        input: Float[Tensor, "batch *in_feature"],
+        /,
+    ) -> distributions.Distribution:
+        """Predictive distribution of the module.
+
+        Computes the predictive distribution given by
+
+        $$
+            p(f(x)) = \int p(f_w(x) \mid w) p(w)\, dw
+        $$
+
+        by marginalizing over the parameters of the model.
+
+        :param input: Input tensor.
         """
         raise NotImplementedError
 

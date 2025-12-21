@@ -335,7 +335,12 @@ class ResNet(bnn.BNNMixin, nn.Module):
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> Float[Tensor, "*sample *batch *out_feature"]:
-        # See note [TorchScript super()]
+        """Implementation of forward which is compatible with TorchScript.
+
+        It serves as an internal, TorchScript-friendly version of the standard forward method,
+        allowing for model tracing and compilation for deployment while preserving the flexibility
+        of the standard forward method in eager execution.
+        """
 
         out = self.conv1(
             input,

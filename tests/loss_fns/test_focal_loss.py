@@ -4,7 +4,6 @@ import numpy as np
 import numpy.testing as npt
 import torch
 
-import inferno
 from inferno import loss_fns
 
 import pytest

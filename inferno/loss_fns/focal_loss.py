@@ -22,7 +22,7 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
 
     $$
         \begin{equation*}
-        \ell_n = -(1-\hat{p}_{y_n})^\gamma\log \hat{p}_{y_n}
+        \ell_n = -(1-\hat{p}_{y_n})^\gamma\log \hat{p}_{y_n}.
         \end{equation*}
     $$
 

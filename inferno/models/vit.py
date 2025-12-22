@@ -5,7 +5,7 @@ from typing import Any, Callable, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
-from torchvision.models._api import Weights, WeightsEnum, register_model
+from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models._meta import _IMAGENET_CATEGORIES
 from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
 from torchvision.ops.misc import MLP, Conv2dNormActivation
@@ -710,7 +710,6 @@ class ViT_H_14_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
 
 
-@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
 def vit_b_16(
     *, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any
@@ -746,7 +745,6 @@ def vit_b_16(
     )
 
 
-@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.IMAGENET1K_V1))
 def vit_b_32(
     *, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any
@@ -782,7 +780,6 @@ def vit_b_32(
     )
 
 
-@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.IMAGENET1K_V1))
 def vit_l_16(
     *, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any
@@ -818,7 +815,6 @@ def vit_l_16(
     )
 
 
-@register_model()
 @handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.IMAGENET1K_V1))
 def vit_l_32(
     *, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any
@@ -854,7 +850,6 @@ def vit_l_32(
     )
 
 
-@register_model()
 @handle_legacy_interface(weights=("pretrained", None))
 def vit_h_14(
     *, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any

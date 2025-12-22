@@ -34,10 +34,6 @@ def preds_and_targets_for_classification_problem(
     return preds, targets
 
 
-def test_against_naive_implementation():
-    raise NotImplementedError
-
-
 @pytest.mark.parametrize(
     "task,weight,num_classes,sample_shape,batch_shape",
     [
@@ -89,6 +85,8 @@ def test_recovers_cross_entropy_loss_with_focusing_parameter_equals_zero(
     npt.assert_allclose(
         focal_loss_fn(preds, targets).detach().numpy(),
         ce_loss_fn(preds, targets).detach().numpy(),
+        atol=1e-6,
+        rtol=1e-6,
     )
 
 

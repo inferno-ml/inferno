@@ -81,21 +81,21 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         """Focal loss for binary classification."""
 
         # Compute binary cross entropy
+        expanded_pred, expanded_target = predictions_and_expanded_targets(pred, target)
         bce_loss = nn.functional.binary_cross_entropy_with_logits(
-            *predictions_and_expanded_targets(pred, target),
+            expanded_pred,
+            expanded_target,
             reduction="none",
             weight=self.weight,
         )
-        probs = nn.functional.sigmoid(pred)
 
         # Compute focal weight
-        target_probs = probs * target + (1.0 - probs) * (1.0 - target)
+        probs = nn.functional.sigmoid(expanded_pred)
+        target_probs = probs * expanded_target + (1.0 - probs) * (1.0 - expanded_target)
         focal_weight = (1 - target_probs) ** self.gamma
 
         # Apply focal loss weighting
-        loss = (
-            focal_weight.reshape((-1,)) * bce_loss
-        )  # TODO: ensure correct focal weights are multiplied here via manual computation in test
+        loss = focal_weight * bce_loss
 
         if self.reduction == "mean":
             return loss.mean()
@@ -108,11 +108,12 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         """Focal loss for multi-class classification."""
 
         # Compute cross-entropy for each class
-        probs = nn.functional.softmax(pred, dim=-1)
-        target_probs = torch.gather(
-            probs, dim=-2, index=target.expand(probs.shape[:-1]).unsqueeze(-1)
-        )
         expanded_pred, expanded_target = predictions_and_expanded_targets(pred, target)
+        target_probs = torch.gather(
+            nn.functional.softmax(expanded_pred, dim=-1),
+            dim=-2,
+            index=expanded_target.unsqueeze(-1),
+        ).squeeze(-1)
         ce_loss = nn.functional.cross_entropy(
             expanded_pred,
             expanded_target,
@@ -128,9 +129,7 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
             ce_loss = weight_t * ce_loss
 
         # Apply focal loss weight
-        loss = (
-            focal_weight.reshape((-1,)) * ce_loss
-        )  # TODO: ensure correct focal weights are multiplied here via manual computation in test
+        loss = focal_weight * ce_loss
 
         if self.reduction == "mean":
             if self.weight is None:

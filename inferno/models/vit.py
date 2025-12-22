@@ -1,9 +1,11 @@
 from collections import OrderedDict
 from functools import partial
 import math
-from typing import Any, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
 
+from jaxtyping import Float
 import torch
+from torch import Tensor
 import torch.nn as nn
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models._meta import _IMAGENET_CATEGORIES
@@ -12,6 +14,7 @@ from torchvision.ops.misc import MLP, Conv2dNormActivation
 from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.utils import _log_api_usage_once
 
+# if TYPE_CHECKING:
 from .. import bnn
 from ..bnn import params
 
@@ -168,7 +171,15 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         self.ln_2 = norm_layer(hidden_dim)
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
-    def forward(self, input: torch.Tensor):
+    def forward(
+        self,
+        input: torch.Tensor,
+        /,
+        sample_shape: torch.Size = torch.Size([]),
+        generator: torch.Generator | None = None,
+        input_contains_samples: bool = False,
+        parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
+    ):
         torch._assert(
             input.dim() == 3,
             f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
@@ -217,7 +228,15 @@ class Encoder(bnn.BNNMixin, nn.Module):
         self.layers = nn.Sequential(layers)
         self.ln = norm_layer(hidden_dim)
 
-    def forward(self, input: torch.Tensor):
+    def forward(
+        self,
+        input: torch.Tensor,
+        /,
+        sample_shape: torch.Size = torch.Size([]),
+        generator: torch.Generator | None = None,
+        input_contains_samples: bool = False,
+        parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
+    ):
         torch._assert(
             input.dim() == 3,
             f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
@@ -284,11 +303,12 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             )
             self.conv_proj: nn.Module = seq_proj
         else:
-            self.conv_proj = nn.Conv2d(
+            self.conv_proj = bnn.Conv2d(
                 in_channels=3,
                 out_channels=hidden_dim,
                 kernel_size=patch_size,
                 stride=patch_size,
+                cov=None,
             )
 
         seq_length = (image_size // patch_size) ** 2
@@ -319,7 +339,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         self.heads = nn.Sequential(heads_layers)
 
-        if isinstance(self.conv_proj, nn.Conv2d):
+        if isinstance(self.conv_proj, bnn.Conv2d):
             # Init the patchify stem
             fan_in = (
                 self.conv_proj.in_channels
@@ -354,8 +374,20 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             nn.init.zeros_(self.heads.head.weight)
             nn.init.zeros_(self.heads.head.bias)
 
-    def _process_input(self, x: torch.Tensor) -> torch.Tensor:
-        n, c, h, w = x.shape
+    def _process_input(
+        self,
+        x: torch.Tensor,
+        /,
+        sample_shape: torch.Size = torch.Size([]),
+        generator: torch.Generator | None = None,
+        input_contains_samples: bool = False,
+        parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
+    ) -> torch.Tensor:
+        if input_contains_samples:
+            n, c, h, w = x.shape[len(sample_shape) :]
+        else:
+            n, c, h, w = x.shape
+
         p = self.patch_size
         torch._assert(
             h == self.image_size,
@@ -368,27 +400,48 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         n_h = h // p
         n_w = w // p
 
-        # (n, c, h, w) -> (n, hidden_dim, n_h, n_w)
-        x = self.conv_proj(x)
+        # (*sample_shape, n, c, h, w) -> (*sample_shape, n, hidden_dim, n_h, n_w)
+        x = self.conv_proj(
+            x,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
         # (n, hidden_dim, n_h, n_w) -> (n, hidden_dim, (n_h * n_w))
-        x = x.reshape(n, self.hidden_dim, n_h * n_w)
+        x = x.reshape(*sample_shape, n, self.hidden_dim, n_h * n_w)
 
-        # (n, hidden_dim, (n_h * n_w)) -> (n, (n_h * n_w), hidden_dim)
+        # (*sample_shape, n, hidden_dim, (n_h * n_w)) -> (*sample_shape, n, (n_h * n_w), hidden_dim)
         # The self attention layer expects inputs in the format (N, S, E)
         # where S is the source sequence length, N is the batch size, E is the
         # embedding dimension
-        x = x.permute(0, 2, 1)
+        # x = x.permute(0, 2, 1)
+        x = x.transpose(-2, -1)
 
         return x
 
-    def forward(self, x: torch.Tensor):
+    def forward(
+        self,
+        x: torch.Tensor,
+        /,
+        sample_shape: torch.Size = torch.Size([]),
+        generator: torch.Generator | None = None,
+        input_contains_samples: bool = False,
+        parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
+    ):
         # Reshape and permute the input tensor
-        x = self._process_input(x)
-        n = x.shape[0]
+        x = self._process_input(
+            x,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
+        n = x.shape[len(sample_shape)]
 
         # Expand the class token to the full batch
-        batch_class_token = self.class_token.expand(n, -1, -1)
-        x = torch.cat([batch_class_token, x], dim=1)
+        batch_class_token = self.class_token.expand(*sample_shape, n, -1, -1)
+        x = torch.cat([batch_class_token, x], dim=-2)
 
         x = self.encoder(x)
 

@@ -5,14 +5,14 @@ from typing import Any, Callable, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
+from torchvision.models._api import Weights, WeightsEnum, register_model
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
+from torchvision.ops.misc import MLP, Conv2dNormActivation
+from torchvision.transforms._presets import ImageClassification, InterpolationMode
+from torchvision.utils import _log_api_usage_once
 
-from ..ops.misc import MLP, Conv2dNormActivation
-from ..transforms._presets import ImageClassification, InterpolationMode
-from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum, register_model
-from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _ovewrite_named_param, handle_legacy_interface
-
+"""
 __all__ = [
     "VisionTransformer",
     "ViT_B_16_Weights",
@@ -26,6 +26,7 @@ __all__ = [
     "vit_l_32",
     "vit_h_14",
 ]
+"""
 
 
 class ConvStemConfig(NamedTuple):
@@ -37,7 +38,7 @@ class ConvStemConfig(NamedTuple):
 
 
 """
-From [``torchvision.ops.misc``] https://github.com/pytorch/vision/blob/main/torchvision/ops/misc.py
+From [``torchvision.ops.misc.MLP``] https://github.com/pytorch/vision/blob/main/torchvision/ops/misc.py
 """
 
 

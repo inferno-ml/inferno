@@ -1,5 +1,6 @@
 """Loss functions."""
 
+from .focal_loss import FocalLoss
 from .variational_free_energy import VariationalFreeEnergy
 from .wrapped_torch_loss_fns import (
     BCELoss,
@@ -8,7 +9,7 @@ from .wrapped_torch_loss_fns import (
     L1Loss,
     MSELoss,
     NLLLoss,
-    inputs_and_expanded_targets,
+    predictions_and_expanded_targets,
 )
 
 VariationalFreeEnergy.__module__ = "inferno.loss_fns"
@@ -18,10 +19,14 @@ __all__ = [
     "BCELoss",
     "BCEWithLogitsLoss",
     "CrossEntropyLoss",
+    "FocalLoss",
     "L1Loss",
     "MSELoss",
     "NLLLoss",
     "NegativeELBO",
     "VariationalFreeEnergy",
-    "inputs_and_expanded_targets",
+    "BCEWithLogitsLossVR",
+    "CrossEntropyLossVR",
+    "MSELossVR",
+    "predictions_and_expanded_targets",
 ]

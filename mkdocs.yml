@@ -21,6 +21,7 @@ nav:
           - Text: api/datasets/text.md
           - Image: api/datasets/image.md
           - Tabular: api/datasets/tabular.md
+      - <code class="doc-symbol doc-symbol-heading">distributions</code>: api/distributions.md
       - <code class="doc-symbol doc-symbol-heading">loss_fns</code>: api/loss_fns.md
       - <code class="doc-symbol doc-symbol-heading">models</code>: api/models.md
   - Contributing: CONTRIBUTING.md

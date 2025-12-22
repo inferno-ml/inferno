@@ -138,7 +138,7 @@ class BNNMixin(abc.ABC):
         input: Float[Tensor, "batch *in_feature"],
         /,
     ) -> distributions.Distribution:
-        """Predictive distribution of the module.
+        r"""Predictive distribution of the module.
 
         Computes the predictive distribution given by
 

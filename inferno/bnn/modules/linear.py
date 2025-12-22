@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import torch
-from torch import nn
+from torch import distributions as torch_distributions, nn
 
 from .. import params
+from ... import distributions as inferno_distributions
 from .bnn_mixin import BNNMixin
 
 if TYPE_CHECKING:
@@ -227,6 +228,25 @@ class Linear(BNNMixin, nn.Module):
                 )
 
         return output
+
+    def predictive(
+        self,
+        input: Float[Tensor, "*sample *batch in_feature"],
+        /,
+    ) -> torch_distributions.Distribution:
+        if isinstance(self.params, (nn.Parameter, nn.ParameterDict)):
+            return inferno_distributions.Delta(
+                self.forward(input),
+                batch_shape=len(input) - 1,
+                event_shape=self.out_features,
+            )
+        elif isinstance(self.params, params.GaussianParameter):
+            # TODO: Need to implement custom MultivariateNormal which accepts arbitrary covariance factors
+            # and computes a Cholesky only lazily, not at instantiation.
+            # return torch_distributions.MultivariateNormal()
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, bias={self.params.bias is not None}"

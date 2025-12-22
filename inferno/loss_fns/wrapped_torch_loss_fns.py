@@ -1,5 +1,9 @@
 """Wrappers for torch loss functions to ensure compatibility with models that sample a set of predictions."""
 
+from __future__ import annotations
+
+from typing import Literal
+
 import torch
 from torch import Tensor, nn
 
@@ -72,6 +76,23 @@ class BCELoss(nn.BCELoss):
 
 
 class BCEWithLogitsLoss(nn.BCEWithLogitsLoss):
+
+    def __init__(
+        self,
+        weight: Tensor | None = None,
+        reduction: Literal["mean", "sum", "none"] = "mean",
+        pos_weight: Tensor | None = None,
+    ):
+        if weight is not None:
+            raise NotImplementedError(
+                "Batch 'weight' rescaling is currently not implemented in Inferno."
+            )
+        if pos_weight is not None:
+            raise NotImplementedError(
+                "'pos_weight' argument not implemented in Inferno."
+            )
+
+        super().__init__(weight=weight, reduction=reduction, pos_weight=pos_weight)
 
     def forward(self, pred: Tensor, target: Tensor) -> Tensor:
         return super().forward(*predictions_and_expanded_targets(pred, target))

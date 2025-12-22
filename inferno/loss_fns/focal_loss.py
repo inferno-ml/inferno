@@ -47,10 +47,17 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         weight: Tensor | None = None,
         reduction: Literal["none", "sum", "mean"] = "mean",
     ):
-        super().__init__(weight=weight, reduction=reduction)
+        super().__init__(
+            weight=weight,
+            reduction=reduction,
+        )
         self.task = task
         self.gamma = gamma
         self.num_classes = num_classes
+        if task == "binary" and weight is not None:
+            raise NotImplementedError(
+                "Batch 'weight' rescaling is currently not implemented in Inferno."
+            )
         if reduction not in ["none", "sum", "mean"]:
             raise ValueError(
                 f"Unsupported reduction '{self.reduction}'. Use 'none', 'sum', or 'mean'."
@@ -61,9 +68,9 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         pred: Tensor,
         target: Tensor,
     ):
-        if self.task_type == "binary":
+        if self.task == "binary":
             return self._binary_focal_loss(pred, target)
-        elif self.task_type == "multiclass":
+        elif self.task == "multiclass":
             return self._multi_class_focal_loss(pred, target)
         else:
             raise ValueError(
@@ -75,31 +82,27 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
 
         # Compute binary cross entropy
         bce_loss = nn.functional.binary_cross_entropy_with_logits(
-            *predictions_and_expanded_targets(pred, target), reduction="none"
+            *predictions_and_expanded_targets(pred, target),
+            reduction="none",
+            weight=self.weight,
         )
         probs = nn.functional.sigmoid(pred)
 
         # Compute focal weight
-        target_probs = probs * target + (1 - probs) * (1 - target)
+        target_probs = probs * target + (1.0 - probs) * (1.0 - target)
         focal_weight = (1 - target_probs) ** self.gamma
 
-        # Apply optional class weighting
-        if self.weight is not None:
-            weight = torch.as_tensor(self.weight).to(pred.device)
-            weight_t = weight * target + (1 - self.weight) * (1 - target)
-            bce_loss = weight_t * bce_loss
-
         # Apply focal loss weighting
-        loss = focal_weight.flatten() * bce_loss
+        loss = (
+            focal_weight.reshape((-1,)) * bce_loss
+        )  # TODO: ensure correct focal weights are multiplied here via manual computation in test
 
         if self.reduction == "mean":
             return loss.mean()
         elif self.reduction == "sum":
             return loss.sum()
-
-        # TODO: ensure shape is correct when applying no reduction (sample, batch)
-
-        return loss
+        else:
+            return loss
 
     def _multi_class_focal_loss(self, pred: Tensor, target: Tensor):
         """Focal loss for multi-class classification."""
@@ -107,30 +110,34 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         # Compute cross-entropy for each class
         probs = nn.functional.softmax(pred, dim=-1)
         target_probs = torch.gather(
-            probs, dim=-1, index=target.view(-1, 1)
-        )  # TODO: ensure target view is correct even when probs contains samples
+            probs, dim=-2, index=target.expand(probs.shape[:-1]).unsqueeze(-1)
+        )
+        expanded_pred, expanded_target = predictions_and_expanded_targets(pred, target)
         ce_loss = nn.functional.cross_entropy(
-            *predictions_and_expanded_targets(pred, target),
+            expanded_pred,
+            expanded_target,
             reduction="none",
         )
 
         # Compute focal weight
         focal_weight = (1 - target_probs) ** self.gamma
 
-        # Apply optional class weighting
+        # Apply optional per-class weighting
         if self.weight is not None:
-            weight = torch.as_tensor(self.weight).to(pred.device)
-            weight_t = weight * target + (1 - self.weight) * (1 - target)
-            ce_loss = weight_t.unsqueeze(1) * ce_loss
+            weight_t = torch.gather(self.weight, dim=0, index=expanded_target)
+            ce_loss = weight_t * ce_loss
 
         # Apply focal loss weight
-        loss = focal_weight.flatten() * ce_loss
+        loss = (
+            focal_weight.reshape((-1,)) * ce_loss
+        )  # TODO: ensure correct focal weights are multiplied here via manual computation in test
 
         if self.reduction == "mean":
-            return loss.mean()
+            if self.weight is None:
+                return loss.mean()
+            else:
+                return loss.sum() / self.weight[expanded_target].sum()
         elif self.reduction == "sum":
             return loss.sum()
-
-        # TODO: ensure shape is correct when applying no reduction (sample, batch, class)
-
-        return loss
+        else:
+            return loss

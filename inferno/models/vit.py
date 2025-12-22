@@ -12,6 +12,9 @@ from torchvision.ops.misc import MLP, Conv2dNormActivation
 from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.utils import _log_api_usage_once
 
+from .. import bnn
+from ..bnn import params
+
 """
 __all__ = [
     "VisionTransformer",
@@ -42,7 +45,7 @@ From [``torchvision.ops.misc.MLP``] https://github.com/pytorch/vision/blob/main/
 """
 
 
-class MLP(torch.nn.Sequential):
+class MLP(bnn.Sequential):
     """This block implements the multi-layer perceptron (MLP) module.
 
     Args:
@@ -73,14 +76,14 @@ class MLP(torch.nn.Sequential):
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels[:-1]:
-            layers.append(torch.nn.Linear(in_dim, hidden_dim, bias=bias))
+            layers.append(bnn.Linear(in_dim, hidden_dim, bias=bias, cov=None))
             if norm_layer is not None:
                 layers.append(norm_layer(hidden_dim))
             layers.append(activation_layer(**params))
             layers.append(torch.nn.Dropout(dropout, **params))
             in_dim = hidden_dim
 
-        layers.append(torch.nn.Linear(in_dim, hidden_channels[-1], bias=bias))
+        layers.append(bnn.Linear(in_dim, hidden_channels[-1], bias=bias, cov=None))
         layers.append(torch.nn.Dropout(dropout, **params))
 
         super().__init__(*layers)
@@ -139,7 +142,7 @@ class MLPBlock(MLP):
         )
 
 
-class EncoderBlock(nn.Module):
+class EncoderBlock(bnn.BNNMixin, nn.Module):
     """Transformer encoder block."""
 
     def __init__(
@@ -180,7 +183,7 @@ class EncoderBlock(nn.Module):
         return x + y
 
 
-class Encoder(nn.Module):
+class Encoder(bnn.BNNMixin, nn.Module):
     """Transformer Model Encoder for sequence to sequence translation."""
 
     def __init__(
@@ -223,7 +226,7 @@ class Encoder(nn.Module):
         return self.ln(self.layers(self.dropout(input)))
 
 
-class VisionTransformer(nn.Module):
+class VisionTransformer(bnn.BNNMixin, nn.Module):
     """Vision Transformer as per https://arxiv.org/abs/2010.11929."""
 
     def __init__(

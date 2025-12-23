@@ -1,3 +1,5 @@
+import copy
+
 from numpy import testing as npt
 import torch
 from torch import nn
@@ -54,9 +56,32 @@ def test_forward_is_deterministic_given_generator(seed):
         bnn.Linear(3, 1, cov=params.FactorizedCovariance()),
     )
 
-    input = torch.randn(3, 4, generator=torch.Generator().manual_seed(seed + 2452345))
+    input = torch.randn(3, 4, generator=torch.Generator().manual_seed(seed + 243534))
     output1 = sequential_model(input, generator=torch.Generator().manual_seed(seed))
     output2 = sequential_model(input, generator=torch.Generator().manual_seed(seed))
+
+    npt.assert_allclose(output1.detach().numpy(), output2.detach().numpy())
+
+
+def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params():
+    generator = torch.Generator().manual_seed(0)
+
+    sequential_model = bnn.Sequential(
+        bnn.Linear(4, 3, cov=params.FactorizedCovariance()),
+        nn.ReLU(),
+        bnn.Linear(3, 3, cov=params.FactorizedCovariance()),
+        nn.ReLU(),
+        bnn.Linear(3, 1, cov=params.FactorizedCovariance()),
+    )
+    sequential_model_deterministic = copy.deepcopy(sequential_model)
+    for layer in sequential_model_deterministic:
+        if hasattr(layer, "params"):
+            layer.params.cov = None
+
+    input = torch.randn(3, 4, generator=generator)
+
+    output1 = sequential_model(input, sample_shape=None, generator=generator)
+    output2 = sequential_model_deterministic(input, generator=generator)
 
     npt.assert_allclose(output1.detach().numpy(), output2.detach().numpy())
 

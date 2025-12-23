@@ -73,7 +73,7 @@ class Sequential(BNNMixin, nn.Sequential):
         self,
         input: Float[Tensor, "*batch in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -92,7 +92,7 @@ class Sequential(BNNMixin, nn.Sequential):
                 ):
                     # If the module contains BNN parameters, we need to sample
 
-                    if not input_contains_samples:
+                    if not input_contains_samples and sample_shape is not None:
 
                         # Repeat input for each sample
                         input = input.expand(*sample_shape, *input.shape)
@@ -159,15 +159,18 @@ class Sequential(BNNMixin, nn.Sequential):
                         input = module(input)
                     else:
                         # Call the module's forward pass in batched mode
+                        num_sample_dims = (
+                            0 if sample_shape is None else len(sample_shape)
+                        )
                         input = batched_forward(
-                            module, num_batch_dims=len(sample_shape) + 1
+                            module, num_batch_dims=num_sample_dims + 1
                         )(input)
             else:
                 raise ValueError(
                     f"Sequential contains unsupported module type: {type(module)}"
                 )
 
-        if not input_contains_samples:
+        if not input_contains_samples and sample_shape is not None:
             # In case there are no BNN layers, simply expand the output to the sample shape.
             input = input.expand(*sample_shape, *input.shape)
 

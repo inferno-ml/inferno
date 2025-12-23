@@ -126,7 +126,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         value: Float[Tensor, "*sample batch token embed_dim_v"] | None,
         attn_mask: Float[Tensor, "batch query_token keyval_token"] | None = None,
         is_causal: bool = False,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,

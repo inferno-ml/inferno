@@ -59,7 +59,7 @@ class Ensemble(BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*batch in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,

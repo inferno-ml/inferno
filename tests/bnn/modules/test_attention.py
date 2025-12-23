@@ -13,12 +13,17 @@ import pytest
     "kdim,vdim,is_self_attention",
     [(None, None, False), (None, None, True), (2, 3, False)],
 )
+@pytest.mark.parametrize(
+    "cov",
+    [None, {"q": None, "k": None, "v": params.FactorizedCovariance(), "out": None}],
+)
 def test_generalizes_pytorch_multi_head_attention_layer(
     embed_dim,
     num_heads,
     kdim,
     vdim,
     is_self_attention,
+    cov,
 ):
     """Test whether the BNN attention layer generalizes the PyTorch attention layer."""
 
@@ -39,8 +44,9 @@ def test_generalizes_pytorch_multi_head_attention_layer(
         kdim=kdim,
         vdim=vdim,
         bias=is_self_attention,
+        cov=cov,
     )
-    attn_inferno.load_state_dict(attn_torch.state_dict())
+    attn_inferno.load_state_dict(attn_torch.state_dict(), strict=False)
 
     batch_size = 8
     num_tokens = 100
@@ -64,7 +70,7 @@ def test_generalizes_pytorch_multi_head_attention_layer(
         )
 
     out_seq_torch = attn_torch(query, key, value, need_weights=False)[0]
-    out_seq_inferno = attn_inferno(query, key, value)
+    out_seq_inferno = attn_inferno(query, key, value, sample_shape=None)
 
     npt.assert_allclose(
         out_seq_torch.detach().numpy(),

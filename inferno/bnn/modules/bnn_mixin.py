@@ -113,7 +113,7 @@ class BNNMixin(abc.ABC):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -130,25 +130,6 @@ class BNNMixin(abc.ABC):
         :param parameter_samples: Dictionary of parameter samples. Used to pass
             sampled parameters to the module. Useful to jointly sample parameters
             of multiple layers.
-        """
-        raise NotImplementedError
-
-    def predictive(
-        self,
-        input: Float[Tensor, "batch *in_feature"],
-        /,
-    ) -> distributions.Distribution:
-        r"""Predictive distribution of the module.
-
-        Computes the predictive distribution given by
-
-        $$
-            p(f(x)) = \int p(f_w(x) \mid w) p(w)\, dw
-        $$
-
-        by marginalizing over the parameters of the model.
-
-        :param input: Input tensor.
         """
         raise NotImplementedError
 

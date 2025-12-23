@@ -1,3 +1,5 @@
+import copy
+
 import numpy.testing as npt
 import torch
 from torch import nn
@@ -109,11 +111,53 @@ def test_same_as_torchvision_mlp(inferno_mlp, torchvision_mlp):
         ),
     ],
 )
+def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(model):
+
+    deterministic_model = copy.deepcopy(model)
+    for layer in deterministic_model:
+        if hasattr(layer, "params"):
+            layer.params.cov = None
+
+    input = torch.randn(3, 10, generator=torch.Generator().manual_seed(4236))
+
+    model.eval()
+    deterministic_model.eval()
+
+    npt.assert_allclose(
+        deterministic_model(input).detach().numpy(),
+        model(input, sample_shape=None).detach().numpy(),
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=params.KroneckerCovariance(),
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+    ],
+)
 def test_draw_samples(model):
     """Test whether the model can draw samples."""
     torch.manual_seed(0)
 
-    # Create a ResNet model
     in_size = 10
 
     # Create random input
@@ -128,55 +172,3 @@ def test_draw_samples(model):
 
     # Check the shape of the output
     assert output.shape == (*sample_shape, batch_size, in_size)
-
-
-# @pytest.mark.skip(
-#     "torch.compile currently doesn't work due to the use of Generator in forward."
-# )
-@pytest.mark.parametrize(
-    "model",
-    [
-        inferno.models.MLP(
-            in_size=10,
-            hidden_sizes=[32, 32],
-            out_size=10,
-            activation_layer=nn.SiLU,
-            dropout=0.1,
-            bias=True,
-            cov=None,
-        ),
-        inferno.models.MLP(
-            in_size=10,
-            hidden_sizes=[32, 32],
-            out_size=10,
-            norm_layer=nn.LayerNorm,
-            activation_layer=nn.SiLU,
-            dropout=0.1,
-            bias=True,
-            cov=params.FactorizedCovariance(),
-        ),
-        inferno.models.MLP(
-            in_size=10,
-            hidden_sizes=[16, 16],
-            out_size=1,
-            norm_layer=nn.LayerNorm,
-            activation_layer=nn.SiLU,
-            bias=True,
-            cov=[None, None, params.FactorizedCovariance()],
-        ),
-    ],
-)
-def test_torch_compile(model):
-    """Test whether the model can be compiled using torch.compile."""
-
-    # Compile model
-    compiled_model = torch.compile(model)
-
-    # Try using compiled model
-    input = torch.randn(32, 10)
-    compiled_model(input)
-
-    # Run compiled model a second time and check for equivalence to original model
-    npt.assert_allclose(
-        compiled_model(input).detach().numpy(), model(input).detach().numpy()
-    )

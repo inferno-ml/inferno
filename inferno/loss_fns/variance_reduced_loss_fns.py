@@ -7,7 +7,7 @@ from torch import distributions, nn
 
 from inferno import bnn
 
-from .wrapped_torch_loss_fns import _predictions_and_expanded_targets
+from .wrapped_torch_loss_fns import MSELoss
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -50,24 +50,15 @@ class MSELossVR(nn.modules.loss._Loss):
         reduction: Literal["none", "sum", "mean"] = "mean",
     ):
         super().__init__(reduction=reduction)
+        if reduction not in ["none", "sum", "mean"]:
+            raise ValueError(
+                f"Unsupported reduction '{self.reduction}'. Use 'none', 'sum', or 'mean'."
+            )
+
+        self._mse_loss = MSELoss(reduction="none")
 
     def forward(
         self,
-        # representation: Callable[
-        #     [
-        #         Float[Tensor, "batch *in_feature"],
-        #         torch.Size,
-        #     ],
-        #     Float[Tensor, "*sample batch *feature"],
-        # ],
-        # linear_output_layer_predictive: Callable[
-        #     [Float[Tensor, "*sample batch *feature"]],
-        #     Float[
-        #         Tensor, "*sample batch *out_feature"
-        #     ],  # TODO: should return distribution instead!
-        # ],
-        # output_layer_predictive_dist: torch.distributions.Distribution,
-        # input: Float[Tensor, "*sample batch *in_feature"],
         input_representation: Float[Tensor, "*sample batch *feature"],
         output_layer: bnn.BNNMixin,
         target: Float[Tensor, "*sample batch *out_feature"],
@@ -79,37 +70,68 @@ class MSELossVR(nn.modules.loss._Loss):
         :param output_layer: Output layer of the model.
         :param target: Target tensor.
         """
+        if not isinstance(output_layer, (bnn.Linear)):
+            raise NotImplementedError
 
         # Compute predictive distribution conditioned on a sampled representation
-        predictive_conditioned_on_representation = output_layer.predictive(
-            input_representation
+        # NOTE: the current implementation is somewhat ad-hoc and only works for bnn.Linear output layers.
+        # In the future this should simply rely on a .predictive() method in each BNNMixin module:
+        # predictive_conditioned_on_representation = output_layer.predictive(
+        #     input_representation
+        # )
+
+        mean_term = self._mse_loss(
+            output_layer(input_representation, sample_shape=None),
+            target,
         )
 
-        # Compute loss
-        loss = (
-            nn.functional.mse_loss(
-                *_predictions_and_expanded_targets(
-                    predictive_conditioned_on_representation.mean, target
+        if output_layer.params.cov is not None:
+            if output_layer.bias is not None:
+                if list(output_layer.params.cov.factor.keys())[0] == "bias":
+                    # Ensure representation is padded with ones correctly depending on
+                    # which cov parameters correspond to the bias
+                    input_representation = torch.cat(
+                        (
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            input_representation,
+                        ),
+                        dim=-1,
+                    )
+                else:
+                    input_representation = torch.cat(
+                        (
+                            input_representation,
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                        ),
+                        dim=-1,
+                    )
+
+            variance_term = (
+                torch.einsum(
+                    "...f,fr->...r",
+                    input_representation,
+                    output_layer.params.cov._stacked_parameters(),
                 )
+                .pow(2)
+                .sum(-1)
             )
-            + predictive_conditioned_on_representation.variance
-        )  # TODO: replace with inferno loss function stored as an attribute
+
+            if output_layer.out_features == 1:
+                variance_term = variance_term.unsqueeze(-1)
+            elif output_layer.out_features > 1:
+                raise NotImplementedError("Currently only supports 1D outputs.")
+
+            loss = mean_term + variance_term
+        else:
+            loss = mean_term
 
         # Reduction
         if self.reduction == "mean":
             return loss.mean()
         elif self.reduction == "sum":
             return loss.sum()
-
-        # TODO: ensure shape is correct when applying no reduction (sample, batch)
-
-        return loss
-
-    # TODO: Give models in inferno.models a .representation(input) or .representation(input) function
-    # TODO: Give all bnn.BNNMixin layers a .predictive(input) -> torch.distributions.Distribution function and if Parameters are GaussianParameters
-    # then ensure the predictive(input) function is implemented (conditional of samples of the input).
-    # TODO: Implement forward pass with sample_shape=None as forward pass with just mean_params (and use that for efficiency in linear layers)
-    # TODO: tests for .predictive, .representation, and all losses
+        else:
+            return loss
 
 
 class BCEWithLogitsLossVR(nn.modules.loss._Loss):

@@ -147,3 +147,48 @@ def test_reductions(
     else:
         # No reduction
         assert loss.shape == sample_shape + batch_shape
+
+
+@pytest.mark.parametrize(
+    "task,weight,num_classes,sample_shape,batch_shape",
+    [
+        ("binary", None, None, (3, 6), (32,)),
+        ("multiclass", torch.arange(1, 11).float() / 45, 10, (3, 6), (32,)),
+        ("multiclass", 0.1 * torch.ones(10), 10, (3, 6), (32,)),
+    ],
+)
+@pytest.mark.parametrize("reduction", ["mean", "sum", "none"])
+def test_updating_weight_works_correctly(
+    task: str,
+    weight: torch.Tensor | None,
+    num_classes: int | None,
+    batch_shape: torch.Size,
+    sample_shape: torch.Size,
+    reduction: str,
+):
+    # Predictions and targets
+    generator = torch.Generator().manual_seed(345)
+    preds, targets = preds_and_targets_for_classification_problem(
+        task=task,
+        num_classes=num_classes,
+        batch_shape=batch_shape,
+        sample_shape=sample_shape,
+        generator=generator,
+    )
+
+    # Focal losses
+    focal_loss_fn_correct_weights = loss_fns.FocalLoss(
+        task=task, weight=weight, num_classes=num_classes, reduction=reduction
+    )
+    focal_loss_fn_updated_weights = loss_fns.FocalLoss(
+        task=task, weight=None, num_classes=num_classes, reduction=reduction
+    )
+    focal_loss_fn_updated_weights.weight = weight
+
+    # Check losses are equal
+    npt.assert_allclose(
+        focal_loss_fn_correct_weights(preds, targets).detach().numpy(),
+        focal_loss_fn_updated_weights(preds, targets).detach().numpy(),
+        atol=1e-6,
+        rtol=1e-6,
+    )

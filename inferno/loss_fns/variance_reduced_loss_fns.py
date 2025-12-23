@@ -71,7 +71,9 @@ class MSELossVR(nn.modules.loss._Loss):
         :param target: Target tensor.
         """
         if not isinstance(output_layer, (bnn.Linear)):
-            raise NotImplementedError
+            raise NotImplementedError(
+                "Currently only supports linear Gaussian output layers."
+            )
 
         # Compute predictive distribution conditioned on a sampled representation
         # NOTE: the current implementation is somewhat ad-hoc and only works for bnn.Linear output layers.
@@ -276,32 +278,65 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
         :param output_layer: Output layer of the model.
         :param target: Target tensor.
         """
+        if not isinstance(output_layer, (bnn.Linear)):
+            raise NotImplementedError(
+                "Currently only supports linear Gaussian output layers."
+            )
 
-        # Compute predictive distribution conditioned on a sampled representation
-        predictive_conditioned_on_representation = output_layer.predictive(
-            input_representation
+        # Logits of model with mean parameters
+        mean_logits = output_layer(input_representation, sample_shape=None)
+        mean_pred = (
+            torch.gather(mean_logits.flatten(0, -2), dim=-2, index=target.unsqueeze(-1))
+            .squeeze(-1)
+            .unflatten(dim=0, sizes=mean_logits.shape[0:-1])
         )
 
-        # Compute loss
-        if isinstance(predictive_conditioned_on_representation, distributions.Normal):
-            loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
-                predictive_conditioned_on_representation.mean,
-                dim=-1,
-                index=target.view(-1, 1),
-            ) + torch.logsumexp(
-                predictive_conditioned_on_representation.mean
-                + 0.5 * predictive_conditioned_on_representation.variance,
-                dim=-1,
+        if output_layer.params.cov is not None:
+            if output_layer.bias is not None:
+                if list(output_layer.params.cov.factor.keys())[0] == "bias":
+                    # Ensure representation is padded with ones correctly depending on
+                    # which cov parameters correspond to the bias
+                    input_representation = torch.cat(
+                        (
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            input_representation,
+                        ),
+                        dim=-1,
+                    )
+                else:
+                    input_representation = torch.cat(
+                        (
+                            input_representation,
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                        ),
+                        dim=-1,
+                    )
+
+            variance_term = (
+                torch.einsum(
+                    "...f,fr->...r",
+                    input_representation,
+                    output_layer.params.cov._stacked_parameters(),
+                )
+                .pow(2)
+                .sum(-1)
+            )
+
+            if output_layer.out_features == 1:
+                variance_term = variance_term.unsqueeze(-1)
+            elif output_layer.out_features > 1:
+                raise NotImplementedError("Currently only supports 1D outputs.")
+
+            loss = -mean_pred + torch.logsumexp(
+                mean_logits + 0.5 * variance_term, dim=-1
             )
         else:
-            raise NotImplementedError
+            loss = -mean_pred + torch.logsumexp(mean_logits, dim=-1)
 
         # Reduction
         if self.reduction == "mean":
             return loss.mean()
         elif self.reduction == "sum":
             return loss.sum()
-
-        # TODO: ensure shape is correct when applying no reduction (sample, batch)
-
-        return loss
+        else:
+            return loss

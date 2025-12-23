@@ -33,6 +33,23 @@ import pytest
             loss_fns.MSELossVR,
             models.MLP(
                 in_size=3,
+                hidden_sizes=[8, 8, 8],
+                out_size=1,
+                cov=[
+                    bnn.params.FactorizedCovariance(),
+                    None,
+                    None,
+                    None,
+                ],
+            ),
+            torch.randn(64, 3, generator=torch.Generator().manual_seed(4958)),
+            torch.randn(64, 1, generator=torch.Generator().manual_seed(4958)),
+        ),
+        (
+            loss_fns.MSELoss,
+            loss_fns.MSELossVR,
+            models.MLP(
+                in_size=3,
                 hidden_sizes=[8, 8],
                 out_size=1,
                 bias=False,
@@ -61,6 +78,44 @@ import pytest
             ),
             torch.randn(64, 3, generator=torch.Generator().manual_seed(4958)),
             torch.randn(64, 1, generator=torch.Generator().manual_seed(4958)),
+        ),
+        (
+            loss_fns.CrossEntropyLoss,
+            loss_fns.CrossEntropyLossVR,
+            models.MLP(
+                in_size=6,
+                hidden_sizes=[8, 8],
+                out_size=5,
+                bias=True,
+                cov=[
+                    bnn.params.FactorizedCovariance(),
+                    None,
+                    bnn.params.LowRankCovariance(4),
+                ],
+            ),
+            torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
+            torch.empty(32, dtype=torch.long).random_(
+                5, generator=torch.Generator().manual_seed(3244)
+            ),
+        ),
+        (
+            loss_fns.CrossEntropyLoss,
+            loss_fns.CrossEntropyLossVR,
+            models.MLP(
+                in_size=6,
+                hidden_sizes=[8, 8],
+                out_size=5,
+                bias=False,
+                cov=[
+                    bnn.params.FactorizedCovariance(),
+                    None,
+                    bnn.params.LowRankCovariance(4),
+                ],
+            ),
+            torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
+            torch.empty(32, dtype=torch.long).random_(
+                5, generator=torch.Generator().manual_seed(3244)
+            ),
         ),
     ],
 )
@@ -132,6 +187,36 @@ def test_equals_expected_loss(
             torch.randn(64, 3, generator=torch.Generator().manual_seed(97)),
             torch.randn(64, 1, generator=torch.Generator().manual_seed(97)),
         ),
+        (
+            nn.CrossEntropyLoss,
+            loss_fns.CrossEntropyLossVR,
+            models.MLP(
+                in_size=6,
+                hidden_sizes=[8, 8],
+                out_size=5,
+                bias=True,
+                cov=None,
+            ),
+            torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
+            torch.empty(32, dtype=torch.long).random_(
+                5, generator=torch.Generator().manual_seed(3244)
+            ),
+        ),
+        (
+            nn.CrossEntropyLoss,
+            loss_fns.CrossEntropyLossVR,
+            models.MLP(
+                in_size=6,
+                hidden_sizes=[8, 8],
+                out_size=5,
+                bias=False,
+                cov=None,
+            ),
+            torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
+            torch.empty(32, dtype=torch.long).random_(
+                5, generator=torch.Generator().manual_seed(3244)
+            ),
+        ),
     ],
 )
 def test_equals_torch_loss_for_deterministic_models(
@@ -141,22 +226,16 @@ def test_equals_torch_loss_for_deterministic_models(
     # TODO: temporary until all models get a way to do a forward pass through just part of the model
     # TODO: Give models in inferno.models a .representation(input) or .representation(input) function
     model_representation = bnn.Sequential(
-        *(module for name, module in list(model._modules.items())[0:-2])
+        *(module for _, module in list(model._modules.items())[0:-2])
     )
     model = bnn.Sequential(model_representation, model[-2])
 
     loss = loss_fn(reduction=reduction)(
-        model(
-            input,
-            sample_shape=None,
-        ),
+        model(input, sample_shape=None),
         target,
     )
     loss_variance_reduced = loss_fn_variance_reduced(reduction=reduction)(
-        model_representation(
-            input,
-            sample_shape=None,
-        ),
+        model_representation(input, sample_shape=None),
         model[-1],
         target,
     )

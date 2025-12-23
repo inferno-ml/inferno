@@ -146,4 +146,4 @@ def test_reductions(
         )
     else:
         # No reduction
-        assert loss.shape == np.prod(sample_shape + batch_shape)
+        assert loss.shape == sample_shape + batch_shape

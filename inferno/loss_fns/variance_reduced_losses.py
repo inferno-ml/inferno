@@ -7,7 +7,7 @@ from torch import distributions, nn
 
 from inferno import bnn
 
-from .wrapped_torch_loss_fns import predictions_and_expanded_targets
+from .wrapped_torch_loss_fns import _predictions_and_expanded_targets
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -88,12 +88,12 @@ class MSELossVR(nn.modules.loss._Loss):
         # Compute loss
         loss = (
             nn.functional.mse_loss(
-                *predictions_and_expanded_targets(
+                *_predictions_and_expanded_targets(
                     predictive_conditioned_on_representation.mean, target
                 )
             )
             + predictive_conditioned_on_representation.variance
-        )
+        )  # TODO: replace with inferno loss function stored as an attribute
 
         # Reduction
         if self.reduction == "mean":

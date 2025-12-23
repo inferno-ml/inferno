@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 import torch
 from torch import nn
 
-from .wrapped_torch_loss_fns import predictions_and_expanded_targets
+from .wrapped_torch_loss_fns import BCEWithLogitsLoss, CrossEntropyLoss
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -51,9 +51,6 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
             weight=weight,
             reduction=reduction,
         )
-        self.task = task
-        self.gamma = gamma
-        self.num_classes = num_classes
         if task == "binary" and weight is not None:
             raise NotImplementedError(
                 "Batch 'weight' rescaling is currently not implemented in Inferno."
@@ -62,6 +59,14 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
             raise ValueError(
                 f"Unsupported reduction '{self.reduction}'. Use 'none', 'sum', or 'mean'."
             )
+        self.task = task
+        self.gamma = gamma
+        self.num_classes = num_classes
+
+        if task == "binary":
+            self.ce_loss_fn = BCEWithLogitsLoss(weight=self.weight, reduction="none")
+        elif task == "multiclass":
+            self.ce_loss_fn = CrossEntropyLoss(weight=self.weight, reduction="none")
 
     def forward(
         self,
@@ -81,17 +86,11 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         """Focal loss for binary classification."""
 
         # Compute binary cross entropy
-        expanded_pred, expanded_target = predictions_and_expanded_targets(pred, target)
-        bce_loss = nn.functional.binary_cross_entropy_with_logits(
-            expanded_pred,
-            expanded_target,
-            reduction="none",
-            weight=self.weight,
-        )
+        bce_loss = self.ce_loss_fn(pred, target)
 
         # Compute focal weight
-        probs = nn.functional.sigmoid(expanded_pred)
-        target_probs = probs * expanded_target + (1.0 - probs) * (1.0 - expanded_target)
+        probs = nn.functional.sigmoid(pred)
+        target_probs = probs * target + (1.0 - probs) * (1.0 - target)
         focal_weight = (1 - target_probs) ** self.gamma
 
         # Apply focal loss weighting
@@ -108,25 +107,11 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         """Focal loss for multi-class classification."""
 
         # Compute cross-entropy for each class
-        expanded_pred, expanded_target = predictions_and_expanded_targets(pred, target)
-        target_probs = torch.gather(
-            nn.functional.softmax(expanded_pred, dim=-1),
-            dim=-2,
-            index=expanded_target.unsqueeze(-1),
-        ).squeeze(-1)
-        ce_loss = nn.functional.cross_entropy(
-            expanded_pred,
-            expanded_target,
-            reduction="none",
-        )
+        ce_loss = self.ce_loss_fn(pred, target)
 
         # Compute focal weight
+        target_probs = torch.exp(-ce_loss)
         focal_weight = (1 - target_probs) ** self.gamma
-
-        # Apply optional per-class weighting
-        if self.weight is not None:
-            weight_t = torch.gather(self.weight, dim=0, index=expanded_target)
-            ce_loss = weight_t * ce_loss
 
         # Apply focal loss weight
         loss = focal_weight * ce_loss
@@ -135,7 +120,7 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
             if self.weight is None:
                 return loss.mean()
             else:
-                return loss.sum() / self.weight[expanded_target].sum()
+                return (loss / self.weight[target].sum()).sum(-1).mean()
         elif self.reduction == "sum":
             return loss.sum()
         else:

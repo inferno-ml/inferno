@@ -8,13 +8,12 @@ import torch
 from torch import Tensor, nn
 
 
-def predictions_and_expanded_targets(preds, targets):
-    """Ensure loss can be computed with additional dimensions of (sampled) predictions.
+def _num_extra_dims(preds: Tensor, targets: Tensor) -> int:
+    """Compute number of extra (sampling) dimensions in `preds` over `targets` depending on the data type.
 
     :param preds: Predictions.
     :param targets: Targets.
     """
-
     if (
         torch.is_floating_point(targets)
         or torch.is_complex(targets)
@@ -29,6 +28,23 @@ def predictions_and_expanded_targets(preds, targets):
     else:
         # If targets are classes, the predictions should have one additional dimension (for probabilities)
         num_extra_dims = preds.ndim - targets.ndim - 1
+
+    return num_extra_dims
+
+
+def _predictions_and_expanded_targets(
+    preds: Tensor, targets: Tensor, num_extra_dims: int | None = None
+):
+    """Reshape and expand predictions and targets appropriately for sampled predictions.
+
+    Ensures loss can be computed with additional dimensions of (sampled) predictions beyond a single batch dimension.
+
+    :param preds: Predictions.
+    :param targets: Targets.
+    :param num_extra_dims: Number of extra (sampling) batch dimensions.
+    """
+    if num_extra_dims is None:
+        num_extra_dims = _num_extra_dims(preds, targets)
 
     if num_extra_dims > 0:
         targets = targets.expand(
@@ -45,37 +61,46 @@ def predictions_and_expanded_targets(preds, targets):
     return preds, targets
 
 
-class MSELoss(nn.MSELoss):
+class MultipleBatchDimensionsLossMixin:
+    """Mixin class which allows computing loss across additional batch dimensions."""
 
     def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))
+        # Compute loss by flattening all batch dimensions into a single one
+        num_extra_dims = _num_extra_dims(pred, target)
+        loss = super().forward(
+            *_predictions_and_expanded_targets(
+                pred, target, num_extra_dims=num_extra_dims
+            )
+        )
+
+        if self.reduction == "none":
+            # Reshape to restore batch dimensions
+            loss = loss.unflatten(0, pred.shape[0 : num_extra_dims + 1])
+
+        return loss
 
 
-class L1Loss(nn.L1Loss):
-
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))
+class MSELoss(MultipleBatchDimensionsLossMixin, nn.MSELoss):
+    pass
 
 
-class CrossEntropyLoss(nn.CrossEntropyLoss):
-
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))
+class L1Loss(MultipleBatchDimensionsLossMixin, nn.L1Loss):
+    pass
 
 
-class NLLLoss(nn.NLLLoss):
-
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))
+class CrossEntropyLoss(MultipleBatchDimensionsLossMixin, nn.CrossEntropyLoss):
+    pass
 
 
-class BCELoss(nn.BCELoss):
-
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))
+class NLLLoss(MultipleBatchDimensionsLossMixin, nn.NLLLoss):
+    pass
 
 
-class BCEWithLogitsLoss(nn.BCEWithLogitsLoss):
+class BCELoss(MultipleBatchDimensionsLossMixin, nn.BCELoss):
+    pass
+
+
+class BCEWithLogitsLoss(MultipleBatchDimensionsLossMixin, nn.BCEWithLogitsLoss):
 
     def __init__(
         self,
@@ -93,6 +118,3 @@ class BCEWithLogitsLoss(nn.BCEWithLogitsLoss):
             )
 
         super().__init__(weight=weight, reduction=reduction, pos_weight=pos_weight)
-
-    def forward(self, pred: Tensor, target: Tensor) -> Tensor:
-        return super().forward(*predictions_and_expanded_targets(pred, target))

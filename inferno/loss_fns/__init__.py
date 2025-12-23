@@ -10,7 +10,8 @@ from .wrapped_torch_loss_fns import (
     L1Loss,
     MSELoss,
     NLLLoss,
-    predictions_and_expanded_targets,
+    _num_extra_dims,
+    _predictions_and_expanded_targets,
 )
 
 VariationalFreeEnergy.__module__ = "inferno.loss_fns"
@@ -21,6 +22,7 @@ __all__ = [
     "BCEWithLogitsLoss",
     "CrossEntropyLoss",
     "FocalLoss",
+    "MultipleBatchDimensionsLossMixin",
     "L1Loss",
     "MSELoss",
     "NLLLoss",
@@ -29,5 +31,6 @@ __all__ = [
     "BCEWithLogitsLossVR",
     "CrossEntropyLossVR",
     "MSELossVR",
-    "predictions_and_expanded_targets",
+    "_num_extra_dims",
+    "_predictions_and_expanded_targets",
 ]

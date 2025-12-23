@@ -68,6 +68,14 @@ class FocalLoss(torch.nn.modules.loss._WeightedLoss):
         elif task == "multiclass":
             self.ce_loss_fn = CrossEntropyLoss(weight=self.weight, reduction="none")
 
+    def __setattr__(self, name, value):
+        if name == "weight":
+            # Ensure cross entropy loss weight is updated if focal loss weight is updated.
+            self.ce_loss_fn.weight = value
+            super().__setattr__(name, value)
+        else:
+            super().__setattr__(name, value)
+
     def forward(
         self,
         pred: Tensor,

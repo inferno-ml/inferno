@@ -1,7 +1,5 @@
-import numpy as np
-import numpy.testing as npt
 import torch
-from torch import nn
+from torch import nn, testing
 
 from inferno import loss_fns
 
@@ -198,9 +196,7 @@ def test_allows_computing_loss_with_samples(
             )
         torch_loss = torch_loss_samples
 
-    npt.assert_allclose(
-        inferno_loss.detach().numpy(), torch_loss.detach().numpy(), atol=1e-6, rtol=1e-6
-    )
+    testing.assert_close(inferno_loss, torch_loss, atol=1e-6, rtol=1e-6)
 
 
 @pytest.mark.parametrize(
@@ -282,7 +278,7 @@ def test_allows_computing_loss_with_samples(
     ids=lambda x: x.__class__.__name__,
 )
 def test_equivalent_to_torch_loss_fn(inferno_loss_fn, torch_loss_fn, preds, targets):
-    npt.assert_allclose(
-        inferno_loss_fn(preds, targets).detach().numpy(),
-        torch_loss_fn(preds, targets).detach().numpy(),
+    testing.assert_close(
+        inferno_loss_fn(preds, targets),
+        torch_loss_fn(preds, targets),
     )

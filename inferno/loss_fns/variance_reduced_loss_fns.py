@@ -191,35 +191,79 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
         :param output_layer: Output layer of the model.
         :param target: Target tensor.
         """
+        if not isinstance(output_layer, (bnn.Linear)):
+            raise NotImplementedError(
+                "Currently only supports linear Gaussian output layers."
+            )
 
-        # Compute predictive distribution conditioned on a sampled representation
-        predictive_conditioned_on_representation = output_layer.predictive(
-            input_representation
-        )
+        # Logits of model with mean parameters
+        mean_logits = output_layer(input_representation, sample_shape=None)
+        _, expanded_target = _predictions_and_expanded_targets(mean_logits, target)
 
-        # Compute loss
-        if isinstance(predictive_conditioned_on_representation, distributions.Normal):
-            loss = torch.gather(  # TODO: ensure target view is correct even when probs contains samples
-                predictive_conditioned_on_representation.mean,
-                dim=-1,
-                index=target.view(-1, 1),
-            ) + torch.logsumexp(
-                predictive_conditioned_on_representation.mean
-                + 0.5 * predictive_conditioned_on_representation.variance,
-                dim=-1,
+        if output_layer.params.cov is not None:
+            if output_layer.bias is not None:
+                bias_cov_factor = output_layer.params.cov.factor["bias"].unsqueeze(-2)
+                weight_cov_factor = output_layer.params.cov.factor["weight"]
+
+                if list(output_layer.params.cov.factor.keys())[0] == "bias":
+                    # Ensure representation is padded with ones correctly depending on
+                    # which cov parameters correspond to the bias
+                    input_representation = torch.cat(
+                        (
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            input_representation,
+                        ),
+                        dim=-1,
+                    )
+
+                    cov_factor = torch.concatenate(
+                        (bias_cov_factor, weight_cov_factor), dim=-2
+                    )
+
+                else:
+                    input_representation = torch.cat(
+                        (
+                            input_representation,
+                            torch.ones((*input_representation.shape[0:-1], 1)),
+                        ),
+                        dim=-1,
+                    )
+
+                    cov_factor = torch.concatenate(
+                        (weight_cov_factor, bias_cov_factor), dim=-2
+                    )
+
+            else:
+                cov_factor = output_layer.params.cov.factor["weight"]
+
+            variance_term = (
+                torch.einsum(
+                    "...f,cfr->...cr",
+                    input_representation,
+                    cov_factor,
+                )
+                .pow(2)
+                .sum(-1)
+            )
+
+            loss = target * (
+                -mean_logits
+                + torch.log1p(torch.exp(-mean_logits + 0.5 * variance_term))
+            ) + (1 - target) * (
+                mean_logits + torch.log1p(torch.exp(mean_logits + 0.5 * variance_term))
             )
         else:
-            raise NotImplementedError
+            loss = target * (-mean_logits + torch.log1p(torch.exp(-mean_logits))) + (
+                1 - target
+            ) * (mean_logits + torch.log1p(torch.exp(mean_logits)))
 
         # Reduction
         if self.reduction == "mean":
             return loss.mean()
         elif self.reduction == "sum":
             return loss.sum()
-
-        # TODO: ensure shape is correct when applying no reduction (sample, batch)
-
-        return loss
+        else:
+            return loss
 
 
 class CrossEntropyLossVR(nn.modules.loss._Loss):

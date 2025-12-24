@@ -162,8 +162,8 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
 
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
-        self.self_attention = nn.MultiheadAttention(
-            hidden_dim, num_heads, dropout=attention_dropout, batch_first=True
+        self.self_attention = bnn.MultiheadAttention(
+            hidden_dim, num_heads, dropout=attention_dropout, cov=None
         )
         self.dropout = nn.Dropout(dropout)
 
@@ -173,24 +173,38 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
 
     def forward(
         self,
-        input: torch.Tensor,
+        input: Float[Tensor, "*sample batch_size seq_length hidden_dim"],
         /,
         sample_shape: torch.Size = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ):
-        torch._assert(
-            input.dim() == 3,
-            f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
-        )
+        # torch._assert(
+        #    input.dim() == 3,
+        #    f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
+        # )
         x = self.ln_1(input)
-        x, _ = self.self_attention(x, x, x, need_weights=False)
+        x = self.self_attention(
+            x,
+            x,
+            x,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
         x = self.dropout(x)
         x = x + input
 
         y = self.ln_2(x)
-        y = self.mlp(y)
+        y = self.mlp(
+            y,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
         return x + y
 
 
@@ -225,24 +239,37 @@ class Encoder(bnn.BNNMixin, nn.Module):
                 attention_dropout,
                 norm_layer,
             )
-        self.layers = nn.Sequential(layers)
+        self.layers = bnn.Sequential(layers)
         self.ln = norm_layer(hidden_dim)
 
     def forward(
         self,
-        input: torch.Tensor,
+        input: Float[Tensor, "*sample batch_size seq_length hidden_dim"],
         /,
         sample_shape: torch.Size = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ):
-        torch._assert(
-            input.dim() == 3,
-            f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
+        # torch._assert(
+        #    input.dim() == 3,
+        #    f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
+        # )
+        input = input + self.pos_embedding.expand(
+            *sample_shape, *self.pos_embedding.shape
         )
-        input = input + self.pos_embedding
-        return self.ln(self.layers(self.dropout(input)))
+        output = self.dropout(input)
+        output = self.layers(
+            output,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
+        output = bnn.batched_forward(self.ln, num_batch_dims=len(sample_shape) + 1)(
+            output
+        )
+        return output
 
 
 class VisionTransformer(bnn.BNNMixin, nn.Module):
@@ -443,7 +470,13 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         batch_class_token = self.class_token.expand(*sample_shape, n, -1, -1)
         x = torch.cat([batch_class_token, x], dim=-2)
 
-        x = self.encoder(x)
+        x = self.encoder(
+            x,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=True,  # Beau: what should this be?
+            parameter_samples=parameter_samples,
+        )
 
         # Classifier "token" as used by standard language architectures
         x = x[:, 0]

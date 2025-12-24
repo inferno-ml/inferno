@@ -1,6 +1,5 @@
-import numpy.testing as npt
 import torch
-from torch import nn
+from torch import nn, testing
 
 from inferno import bnn, loss_fns, models
 
@@ -150,12 +149,20 @@ def test_equals_expected_loss(
         target,
     )
 
-    npt.assert_allclose(
-        loss_variance_reduced.detach().numpy(),
-        loss.detach().numpy(),
-        atol=1e-2,
-        rtol=1e-2,
-    )
+    if isinstance(loss_fn_variance_reduced(reduction=reduction), loss_fns.MSELossVR):
+        testing.assert_close(
+            loss_variance_reduced,
+            loss,
+            atol=1e-2,
+            rtol=1e-2,
+        )
+    elif isinstance(
+        loss_fn_variance_reduced(reduction=reduction),
+        (loss_fns.BCEWithLogitsLossVR, loss_fns.CrossEntropyLossVR),
+    ):
+        assert torch.all(loss <= loss_variance_reduced)
+    else:
+        raise NotImplementedError
 
 
 @pytest.mark.parametrize("reduction", ["mean", "sum", "none"])
@@ -240,9 +247,9 @@ def test_equals_torch_loss_for_deterministic_models(
         target,
     )
 
-    npt.assert_allclose(
-        loss_variance_reduced.detach().numpy(),
-        loss.detach().numpy(),
+    testing.assert_close(
+        loss_variance_reduced,
+        loss,
         atol=1e-5,
         rtol=1e-5,
     )

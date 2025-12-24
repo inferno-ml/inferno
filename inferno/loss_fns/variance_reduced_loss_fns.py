@@ -7,7 +7,7 @@ from torch import distributions, nn
 
 from inferno import bnn
 
-from .wrapped_torch_loss_fns import MSELoss
+from .wrapped_torch_loss_fns import MSELoss, _predictions_and_expanded_targets
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -61,7 +61,7 @@ class MSELossVR(nn.modules.loss._Loss):
         self,
         input_representation: Float[Tensor, "*sample batch *feature"],
         output_layer: bnn.BNNMixin,
-        target: Float[Tensor, "*sample batch *out_feature"],
+        target: Float[Tensor, "batch *out_feature"],
     ):
         """Runs the forward pass.
 
@@ -182,7 +182,7 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
         self,
         input_representation: Float[Tensor, "*sample batch *feature"],
         output_layer: bnn.BNNMixin,
-        target: Float[Tensor, "*sample batch *out_feature"],
+        target: Float[Tensor, "batch *out_feature"],
     ):
         """Runs the forward pass.
 
@@ -269,7 +269,7 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
         self,
         input_representation: Float[Tensor, "*sample batch *feature"],
         output_layer: bnn.BNNMixin,
-        target: Float[Tensor, "*sample batch *out_feature"],
+        target: Float[Tensor, "batch *out_feature"],
     ):
         """Runs the forward pass.
 
@@ -285,14 +285,20 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
 
         # Logits of model with mean parameters
         mean_logits = output_layer(input_representation, sample_shape=None)
-        mean_pred = (
-            torch.gather(mean_logits.flatten(0, -2), dim=-2, index=target.unsqueeze(-1))
+        _, expanded_target = _predictions_and_expanded_targets(mean_logits, target)
+        mean_logit_target_class = (
+            torch.gather(
+                mean_logits.flatten(0, -2), dim=-1, index=expanded_target.unsqueeze(-1)
+            )
             .squeeze(-1)
             .unflatten(dim=0, sizes=mean_logits.shape[0:-1])
         )
 
         if output_layer.params.cov is not None:
             if output_layer.bias is not None:
+                bias_cov_factor = output_layer.params.cov.factor["bias"].unsqueeze(-2)
+                weight_cov_factor = output_layer.params.cov.factor["weight"]
+
                 if list(output_layer.params.cov.factor.keys())[0] == "bias":
                     # Ensure representation is padded with ones correctly depending on
                     # which cov parameters correspond to the bias
@@ -303,6 +309,11 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
                         ),
                         dim=-1,
                     )
+
+                    cov_factor = torch.concatenate(
+                        (bias_cov_factor, weight_cov_factor), dim=-2
+                    )
+
                 else:
                     input_representation = torch.cat(
                         (
@@ -312,26 +323,28 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
                         dim=-1,
                     )
 
+                    cov_factor = torch.concatenate(
+                        (weight_cov_factor, bias_cov_factor), dim=-2
+                    )
+
+            else:
+                cov_factor = output_layer.params.cov.factor["weight"]
+
             variance_term = (
                 torch.einsum(
-                    "...f,fr->...r",
+                    "...f,cfr->...cr",
                     input_representation,
-                    output_layer.params.cov._stacked_parameters(),
+                    cov_factor,
                 )
                 .pow(2)
                 .sum(-1)
             )
 
-            if output_layer.out_features == 1:
-                variance_term = variance_term.unsqueeze(-1)
-            elif output_layer.out_features > 1:
-                raise NotImplementedError("Currently only supports 1D outputs.")
-
-            loss = -mean_pred + torch.logsumexp(
+            loss = -mean_logit_target_class + torch.logsumexp(
                 mean_logits + 0.5 * variance_term, dim=-1
             )
         else:
-            loss = -mean_pred + torch.logsumexp(mean_logits, dim=-1)
+            loss = -mean_logit_target_class + torch.logsumexp(mean_logits, dim=-1)
 
         # Reduction
         if self.reduction == "mean":

@@ -358,13 +358,13 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
         if representation_size is None:
-            heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
+            heads_layers["head"] = bnn.Linear(hidden_dim, num_classes)
         else:
-            heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
+            heads_layers["pre_logits"] = bnn.Linear(hidden_dim, representation_size)
             heads_layers["act"] = nn.Tanh()
-            heads_layers["head"] = nn.Linear(representation_size, num_classes)
+            heads_layers["head"] = bnn.Linear(representation_size, num_classes)
 
-        self.heads = nn.Sequential(heads_layers)
+        self.heads = bnn.Sequential(heads_layers)
 
         if isinstance(self.conv_proj, bnn.Conv2d):
             # Init the patchify stem
@@ -389,7 +389,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 nn.init.zeros_(self.conv_proj.conv_last.bias)
 
         if hasattr(self.heads, "pre_logits") and isinstance(
-            self.heads.pre_logits, nn.Linear
+            self.heads.pre_logits, bnn.Linear
         ):
             fan_in = self.heads.pre_logits.in_features
             nn.init.trunc_normal_(
@@ -397,7 +397,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             )
             nn.init.zeros_(self.heads.pre_logits.bias)
 
-        if isinstance(self.heads.head, nn.Linear):
+        if isinstance(self.heads.head, bnn.Linear):
             nn.init.zeros_(self.heads.head.weight)
             nn.init.zeros_(self.heads.head.bias)
 
@@ -479,9 +479,15 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         )
 
         # Classifier "token" as used by standard language architectures
-        x = x[:, 0]
+        x = torch.select(x, len(sample_shape) + 1, 0)
 
-        x = self.heads(x)
+        x = self.heads(
+            x,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=True,  # Beau: what should this be?
+            parameter_samples=parameter_samples,
+        )
 
         return x
 

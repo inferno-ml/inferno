@@ -21,6 +21,7 @@ import pytest
                 out_size=10,
                 norm_layer=None,
                 activation_layer=nn.ReLU,
+                dropout=0.0,
                 bias=True,
                 cov=None,
             ),

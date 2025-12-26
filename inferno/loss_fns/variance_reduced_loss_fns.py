@@ -198,9 +198,13 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
 
         # Logits of model with mean parameters
         mean_logits = output_layer(input_representation, sample_shape=None)
-        _, expanded_target = _predictions_and_expanded_targets(mean_logits, target)
+        mean_logits = torch.concatenate(
+            (torch.zeros_like(mean_logits), mean_logits), dim=-1
+        )
 
         if output_layer.params.cov is not None:
+
+            # Get representation and covariance factor
             if output_layer.bias is not None:
                 bias_cov_factor = output_layer.params.cov.factor["bias"].unsqueeze(-2)
                 weight_cov_factor = output_layer.params.cov.factor["weight"]
@@ -236,6 +240,7 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
             else:
                 cov_factor = output_layer.params.cov.factor["weight"]
 
+            # Compute variance term
             variance_term = (
                 torch.einsum(
                     "...f,cfr->...cr",
@@ -245,17 +250,22 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
                 .pow(2)
                 .sum(-1)
             )
+            # Add variance only to non-zero logits
+            variance_term = torch.concatenate(
+                (torch.zeros_like(variance_term), variance_term), dim=-1
+            )
 
-            loss = target * (
-                -mean_logits
-                + torch.log1p(torch.exp(-mean_logits + 0.5 * variance_term))
-            ) + (1 - target) * (
-                mean_logits + torch.log1p(torch.exp(mean_logits + 0.5 * variance_term))
+            # Compute loss
+            loss = target * torch.logsumexp(
+                -mean_logits + 0.5 * variance_term, dim=-1
+            ) + (1 - target) * torch.logsumexp(
+                mean_logits + 0.5 * variance_term, dim=-1
             )
         else:
-            loss = target * (-mean_logits + torch.log1p(torch.exp(-mean_logits))) + (
+            # Compute loss
+            loss = target * torch.logsumexp(-mean_logits, dim=-1) + (
                 1 - target
-            ) * (mean_logits + torch.log1p(torch.exp(mean_logits)))
+            ) * torch.logsumexp(mean_logits, dim=-1)
 
         # Reduction
         if self.reduction == "mean":
@@ -339,6 +349,8 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
         )
 
         if output_layer.params.cov is not None:
+
+            # Get representation and covariance factor
             if output_layer.bias is not None:
                 bias_cov_factor = output_layer.params.cov.factor["bias"].unsqueeze(-2)
                 weight_cov_factor = output_layer.params.cov.factor["weight"]
@@ -374,6 +386,7 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
             else:
                 cov_factor = output_layer.params.cov.factor["weight"]
 
+            # Compute variance term
             variance_term = (
                 torch.einsum(
                     "...f,cfr->...cr",
@@ -384,10 +397,12 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
                 .sum(-1)
             )
 
+            # Compute loss
             loss = -mean_logit_target_class + torch.logsumexp(
                 mean_logits + 0.5 * variance_term, dim=-1
             )
         else:
+            # Compute loss
             loss = -mean_logit_target_class + torch.logsumexp(mean_logits, dim=-1)
 
         # Reduction

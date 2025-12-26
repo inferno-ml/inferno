@@ -29,6 +29,7 @@ class MSELossVR(nn.modules.loss._Loss):
     $$
         \begin{align*}
             \ell_n &= \mathbb{E}_{w}[(f_w(x_n) - y_n)^2]\\
+                   &= \mathbb{E}_{w_{1:L-1}}\big[\mathbb{E}_{w_L \mid w_{1:L-1}}[(f_w(x_n) - y_n)^2]\big]\\
                    &= \mathbb{E}_{w_{1:L-1}}\big[(\mathbb{E}_{w_L \mid w_{1:L-1}}[f_w(x_n)] - y_n)^2 
                         + \operatorname{Var}_{w_L \mid w_{1:L-1}}[f_w(x_n)]\big].
         \end{align*}
@@ -144,9 +145,9 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
     $$
         \begin{align*}
             \ell_n &= \mathbb{E}_{w}[-\log p(y_n \mid f_w(x_n))]\\
-                   &= -\mathbb{E}_{w}[y_n \log \sigma(f_w(x_n)) + (1 - y_n) \log (1 - \sigma(f_w(x_n))]\\
-                   &\leq \mathbb{E}_{w_{1:L-1}}\bigg[ y_n \big(\mathbb{E}_{w_L \mid w_{1:L-1}}[-f_w(x_n)] + \log(1 + \mathbb{E}_{w_L \mid w_{1:L-1}}[\exp(-f_w(x_n))]\big) \\
-                   &\qquad+ (1-y_n) \big(\mathbb{E}_{w_L \mid w_{1:L-1}}[f_w(x_n)] + \log(1 + \mathbb{E}_{w_L \mid w_{1:L-1}}[\exp(f_w(x_n))]\big)\bigg]
+                   &= -\mathbb{E}_{w}[y_n \log \sigma(f_w(x_n)) + (1 - y_n) \log \sigma(-f_w(x_n))]\\
+                   &\leq \mathbb{E}_{w_{1:L-1}}\big[y_n \log(1+\mathbb{E}_{w_L \mid w_{1:L-1}}[\exp(-f_w(x_n))])\\
+                    &\qquad+ (1 - y_n) \log(1+\mathbb{E}_{w_L \mid w_{1:L-1}}[\exp(f_w(x_n))])\big]
         \end{align*}
     $$
 
@@ -154,8 +155,8 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
 
     $$
         \begin{align*}
-            \ell_n &\leq \mathbb{E}_{w_{1:L-1}}\bigg[ y_n \big(\mathbb{E}_{w_L \mid w_{1:L-1}}[-f_w(x_n)] + \log(1 + \exp(\mathbb{E}_{w_L \mid w_{1:L-1}}[-f_w(x_n)] + \frac{1}{2}\operatorname{Var}_{w_L \mid w_{1:L-1}}[f_w(x_n)]) \big) \\
-                   &\qquad+ (1-y_n) \big(\mathbb{E}_{w_L \mid w_{1:L-1}}[f_w(x_n)] + \log(1 + \exp(\mathbb{E}_{w_L \mid w_{1:L-1}}[f_w(x_n)] + \frac{1}{2}\operatorname{Var}_{w_L \mid w_{1:L-1}}[f_w(x_n)])\big)\bigg].
+            \ell_n &\leq \mathbb{E}_{w_{1:L-1}}\big[ y_n \big(\log(1 + \exp(\mathbb{E}_{w_L \mid w_{1:L-1}}[-f_w(x_n)] + \frac{1}{2}\operatorname{Var}_{w_L \mid w_{1:L-1}}[f_w(x_n)]) \big) \\
+                   &\qquad+ (1-y_n) \big(\log(1 + \exp(\mathbb{E}_{w_L \mid w_{1:L-1}}[f_w(x_n)] + \frac{1}{2}\operatorname{Var}_{w_L \mid w_{1:L-1}}[f_w(x_n)])\big)\big].
         \end{align*}
     $$
 

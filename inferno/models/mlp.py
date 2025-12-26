@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 import copy
 import numbers
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Union
 
 import numpy as np
 import torch
@@ -114,7 +115,9 @@ class MLP(bnn.Sequential):
                     else self.in_size
                 ),
                 out_features=(
-                    self.out_size if self._out_size_is_int else np.prod(self.out_size)
+                    self.out_size
+                    if self._out_size_is_int
+                    else np.prod(self.out_size + (1,))
                 ),
                 bias=bias,
                 layer_type="output",
@@ -126,6 +129,12 @@ class MLP(bnn.Sequential):
             layers.append(nn.Dropout(dropout, **params))
 
         super().__init__(*layers, parametrization=parametrization)
+
+    def __getitem__(self, idx: Union[slice, int]) -> bnn.Sequential:
+        if isinstance(idx, slice):
+            return bnn.Sequential(OrderedDict(list(self._modules.items())[idx]))
+        else:
+            return super().__getitem__(idx)
 
     def forward(
         self,
@@ -146,6 +155,6 @@ class MLP(bnn.Sequential):
         )
 
         if not self._out_size_is_int:
-            out = out.reshape(out.shape[0:-1] + torch.Size(self.out_size))
+            out = out.reshape(out.shape[0:-1] + tuple(self.out_size))
 
         return out

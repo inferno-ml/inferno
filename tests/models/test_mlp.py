@@ -153,6 +153,24 @@ def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(model):
             bias=True,
             cov=[None, None, params.FactorizedCovariance()],
         ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=(),
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=(2, 3),
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
     ],
 )
 def test_draw_samples(model):
@@ -172,4 +190,7 @@ def test_draw_samples(model):
         output = model(input, sample_shape=sample_shape)
 
     # Check the shape of the output
-    assert output.shape == (*sample_shape, batch_size, in_size)
+    out_size = (
+        model.out_size if isinstance(model.out_size, tuple) else (model.out_size,)
+    )
+    assert output.shape == (*sample_shape, batch_size, *out_size)

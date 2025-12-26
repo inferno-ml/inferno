@@ -122,7 +122,7 @@ import pytest
             models.MLP(
                 in_size=6,
                 hidden_sizes=[8, 8],
-                out_size=1,
+                out_size=(),
                 cov=None,
             ),
             torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
@@ -134,7 +134,7 @@ import pytest
             models.MLP(
                 in_size=6,
                 hidden_sizes=[8, 8],
-                out_size=1,
+                out_size=(),
                 cov=[
                     bnn.params.FactorizedCovariance(),
                     None,
@@ -155,19 +155,9 @@ def test_equals_expected_loss(
         torch.manual_seed(23)
         model.reset_parameters()
 
-        # TODO: temporary until all models get a way to do a forward pass through just part of the model
-        # TODO: Give models in inferno.models a .representation(input) or .representation(input) function
-        model_representation = bnn.Sequential(
-            *(module for _, module in list(model._modules.items())[0:-2])
-        )
-        layers = [model_representation, model[-1]]
-        if issubclass(loss_fn, nn.BCEWithLogitsLoss):
-            layers += [nn.Flatten(-2, -1)]
-        model = bnn.Sequential(*layers)
-        if issubclass(loss_fn, nn.BCEWithLogitsLoss):
-            output_layer = model[-2]
-        else:
-            output_layer = model[-1]
+        # Get representation of input and output layer
+        model_representation = model[0:-1]
+        output_layer = model[-1]
 
         # Evaluate loss functions
         num_samples = 10000
@@ -244,7 +234,7 @@ def test_equals_expected_loss(
             models.MLP(
                 in_size=6,
                 hidden_sizes=[8, 8],
-                out_size=1,
+                out_size=(),
                 cov=None,
             ),
             torch.randn((32, 6), generator=torch.Generator().manual_seed(42)),
@@ -256,19 +246,9 @@ def test_equals_torch_loss_for_deterministic_models(
     loss_fn, loss_fn_variance_reduced, model, input, target, reduction
 ):
 
-    # TODO: temporary until all models get a way to do a forward pass through just part of the model
-    # TODO: Give models in inferno.models a .representation(input) or .representation(input) function
-    model_representation = bnn.Sequential(
-        *(module for _, module in list(model._modules.items())[0:-2])
-    )
-    layers = [model_representation, model[-1]]
-    if issubclass(loss_fn, nn.BCEWithLogitsLoss):
-        layers += [nn.Flatten(-2, -1)]
-    model = bnn.Sequential(*layers)
-    if issubclass(loss_fn, nn.BCEWithLogitsLoss):
-        output_layer = model[-2]
-    else:
-        output_layer = model[-1]
+    # Get representation of input and output layer
+    model_representation = model[0:-1]
+    output_layer = model[-1]
 
     # Compare losses
     loss = loss_fn(reduction=reduction)(
@@ -447,17 +427,9 @@ def test_shape_for_no_reduction(
     target,
 ):
 
-    model_representation = bnn.Sequential(
-        *(module for _, module in list(model._modules.items())[0:-2])
-    )
-    layers = [model_representation, model[-1]]
-    if isinstance(loss_fn_variance_reduced, loss_fns.BCEWithLogitsLossVR):
-        layers += [nn.Flatten(-2, -1)]
-    model = bnn.Sequential(*layers)
-    if isinstance(loss_fn_variance_reduced, loss_fns.BCEWithLogitsLossVR):
-        output_layer = model[-2]
-    else:
-        output_layer = model[-1]
+    # Get representation of input and output layer
+    model_representation = model[0:-1]
+    output_layer = model[-1]
 
     loss_variance_reduced = loss_fn_variance_reduced(
         model_representation(input, sample_shape=sample_shape),

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import torch
-from torch import distributions as nn
+from torch import nn
 
 from .. import params
 from .bnn_mixin import BNNMixin

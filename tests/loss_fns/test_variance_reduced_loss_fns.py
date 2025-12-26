@@ -152,7 +152,7 @@ def test_equals_expected_loss(
 
     # Necessary to avoid flaky tests since model initalization is not deterministic.
     with torch.random.fork_rng():  # Do not change global rng state.
-        torch.manual_seed(22)
+        torch.manual_seed(23)
         model.reset_parameters()
 
         # TODO: temporary until all models get a way to do a forward pass through just part of the model
@@ -160,7 +160,7 @@ def test_equals_expected_loss(
         model_representation = bnn.Sequential(
             *(module for _, module in list(model._modules.items())[0:-2])
         )
-        layers = [model_representation, model[-2]]
+        layers = [model_representation, model[-1]]
         if issubclass(loss_fn, nn.BCEWithLogitsLoss):
             layers += [nn.Flatten(-2, -1)]
         model = bnn.Sequential(*layers)
@@ -261,7 +261,7 @@ def test_equals_torch_loss_for_deterministic_models(
     model_representation = bnn.Sequential(
         *(module for _, module in list(model._modules.items())[0:-2])
     )
-    layers = [model_representation, model[-2]]
+    layers = [model_representation, model[-1]]
     if issubclass(loss_fn, nn.BCEWithLogitsLoss):
         layers += [nn.Flatten(-2, -1)]
     model = bnn.Sequential(*layers)
@@ -450,7 +450,7 @@ def test_shape_for_no_reduction(
     model_representation = bnn.Sequential(
         *(module for _, module in list(model._modules.items())[0:-2])
     )
-    layers = [model_representation, model[-2]]
+    layers = [model_representation, model[-1]]
     if isinstance(loss_fn_variance_reduced, loss_fns.BCEWithLogitsLossVR):
         layers += [nn.Flatten(-2, -1)]
     model = bnn.Sequential(*layers)

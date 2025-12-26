@@ -4,7 +4,7 @@ import abc
 from typing import TYPE_CHECKING, Callable, Literal
 
 import torch
-from torch import distributions, nn
+from torch import nn
 
 from ..params import MaximalUpdate, Parametrization
 

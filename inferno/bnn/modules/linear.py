@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 import torch
-from torch import distributions as torch_distributions, nn
+from torch import distributions as nn
 
 from .. import params
-from ... import distributions as inferno_distributions
 from .bnn_mixin import BNNMixin
 
 if TYPE_CHECKING:

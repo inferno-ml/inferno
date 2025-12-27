@@ -1,3 +1,5 @@
+import copy
+
 import numpy.testing as npt
 import torch
 from torch import nn
@@ -19,6 +21,7 @@ import pytest
                 out_size=10,
                 norm_layer=None,
                 activation_layer=nn.ReLU,
+                dropout=0.0,
                 bias=True,
                 cov=None,
             ),
@@ -105,7 +108,68 @@ def test_same_as_torchvision_mlp(inferno_mlp, torchvision_mlp):
             activation_layer=nn.SiLU,
             dropout=0.1,
             bias=True,
-            cov=[None, None, params.KroneckerCovariance()],
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+    ],
+)
+def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(model):
+
+    deterministic_model = copy.deepcopy(model)
+    for layer in deterministic_model:
+        if hasattr(layer, "params"):
+            layer.params.cov = None
+
+    input = torch.randn(3, 10, generator=torch.Generator().manual_seed(4236))
+
+    model.eval()
+    deterministic_model.eval()
+
+    npt.assert_allclose(
+        deterministic_model(input).detach().numpy(),
+        model(input, sample_shape=None).detach().numpy(),
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=params.KroneckerCovariance(),
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=10,
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            dropout=0.1,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=(),
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
+        ),
+        inferno.models.MLP(
+            in_size=10,
+            hidden_sizes=[32, 32],
+            out_size=(2, 3),
+            norm_layer=nn.LayerNorm,
+            activation_layer=nn.SiLU,
+            bias=True,
+            cov=[None, None, params.FactorizedCovariance()],
         ),
     ],
 )
@@ -113,7 +177,6 @@ def test_draw_samples(model):
     """Test whether the model can draw samples."""
     torch.manual_seed(0)
 
-    # Create a ResNet model
     in_size = 10
 
     # Create random input
@@ -127,4 +190,7 @@ def test_draw_samples(model):
         output = model(input, sample_shape=sample_shape)
 
     # Check the shape of the output
-    assert output.shape == (*sample_shape, batch_size, in_size)
+    out_size = (
+        model.out_size if isinstance(model.out_size, tuple) else (model.out_size,)
+    )
+    assert output.shape == (*sample_shape, batch_size, *out_size)

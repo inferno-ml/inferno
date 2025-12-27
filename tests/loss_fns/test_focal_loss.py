@@ -1,8 +1,8 @@
 from typing import Literal
 
 import numpy as np
-import numpy.testing as npt
 import torch
+from torch import testing
 
 from inferno import loss_fns
 
@@ -81,9 +81,9 @@ def test_recovers_cross_entropy_loss_with_focusing_parameter_equals_zero(
         weight=weight,
     )
 
-    npt.assert_allclose(
-        focal_loss_fn(preds, targets).detach().numpy(),
-        ce_loss_fn(preds, targets).detach().numpy(),
+    testing.assert_close(
+        focal_loss_fn(preds, targets),
+        ce_loss_fn(preds, targets),
         atol=1e-6,
         rtol=1e-6,
     )
@@ -124,24 +124,20 @@ def test_reductions(
     # Check shape and properties of reduction
     if reduction == "mean":
         assert loss.shape == ()
-        npt.assert_allclose(
-            loss.detach().numpy(),
+        testing.assert_close(
+            loss,
             loss_fns.FocalLoss(
                 task=task, gamma=gamma, num_classes=num_classes, reduction="sum"
             )(preds, targets)
-            .detach()
-            .numpy()
             / np.prod(sample_shape + batch_shape),
         )
     elif reduction == "sum":
         assert loss.shape == ()
-        npt.assert_allclose(
-            loss.detach().numpy(),
+        testing.assert_close(
+            loss,
             loss_fns.FocalLoss(
                 task=task, gamma=gamma, num_classes=num_classes, reduction="mean"
             )(preds, targets)
-            .detach()
-            .numpy()
             * np.prod(sample_shape + batch_shape),
         )
     else:
@@ -186,9 +182,9 @@ def test_updating_weight_works_correctly(
     focal_loss_fn_updated_weights.weight = weight
 
     # Check losses are equal
-    npt.assert_allclose(
-        focal_loss_fn_correct_weights(preds, targets).detach().numpy(),
-        focal_loss_fn_updated_weights(preds, targets).detach().numpy(),
+    testing.assert_close(
+        focal_loss_fn_correct_weights(preds, targets),
+        focal_loss_fn_updated_weights(preds, targets),
         atol=1e-6,
         rtol=1e-6,
     )

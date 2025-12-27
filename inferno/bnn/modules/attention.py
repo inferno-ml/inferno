@@ -126,7 +126,7 @@ class MultiheadAttention(BNNMixin, nn.Module):
         value: Float[Tensor, "*sample batch token embed_dim_v"] | None,
         attn_mask: Float[Tensor, "batch query_token keyval_token"] | None = None,
         is_causal: bool = False,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -144,7 +144,8 @@ class MultiheadAttention(BNNMixin, nn.Module):
                 square matrix. The attention masking has the form of the upper left causal bias due to the alignment
                 (see [``torch.nn.attention.bias.CausalBias``][]) when the mask is a non-square matrix.
                 An error is thrown if both ``attn_mask`` and ``is_causal`` are set.
-        :param sample_shape: Shape of samples.
+        :param sample_shape: Shape of samples. If None, runs a forward pass with just
+            the mean parameters.
         :param generator: Random number generator.
         :param input_contains_samples: Whether the input already contains
             samples. If True, the input is assumed to have ``len(sample_shape)``

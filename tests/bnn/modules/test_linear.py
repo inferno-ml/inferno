@@ -14,7 +14,8 @@ import pytest
 
 @pytest.mark.parametrize("batch_shape", [(), (1,), (3,), (4, 1, 2)])
 @pytest.mark.parametrize("in_features, out_features", [(5, 3), (3, 2)])
-def test_generalizes_pytorch_linear_layer(batch_shape, in_features, out_features):
+@pytest.mark.parametrize("cov", [None, params.FactorizedCovariance()])
+def test_generalizes_pytorch_linear_layer(batch_shape, in_features, out_features, cov):
     """Test whether the BNN linear layer generalizes the PyTorch linear layer."""
     generator = torch.Generator().manual_seed(0)
 
@@ -23,13 +24,13 @@ def test_generalizes_pytorch_linear_layer(batch_shape, in_features, out_features
     linear.weight = torch.nn.Parameter(linear.weight)
     linear.bias = torch.nn.Parameter(linear.bias)
 
-    bnn_linear = bnn.Linear(in_features=in_features, out_features=out_features)
+    bnn_linear = bnn.Linear(in_features=in_features, out_features=out_features, cov=cov)
     bnn_linear.params.weight = torch.nn.Parameter(linear.weight)
     bnn_linear.params.bias = torch.nn.Parameter(linear.bias)
 
     npt.assert_allclose(
         linear(input).detach().numpy(),
-        bnn_linear(input, generator=generator).detach().numpy(),
+        bnn_linear(input, sample_shape=None, generator=generator).detach().numpy(),
         atol=1e-6,
         rtol=1e-6,
     )

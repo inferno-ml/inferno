@@ -1,6 +1,11 @@
 """Loss functions."""
 
 from .focal_loss import FocalLoss
+from .variance_reduced_loss_fns import (
+    BCEWithLogitsLossVR,
+    CrossEntropyLossVR,
+    MSELossVR,
+)
 from .variational_free_energy import VariationalFreeEnergy
 from .wrapped_torch_loss_fns import (
     BCELoss,
@@ -27,6 +32,9 @@ __all__ = [
     "NLLLoss",
     "NegativeELBO",
     "VariationalFreeEnergy",
+    "BCEWithLogitsLossVR",
+    "CrossEntropyLossVR",
+    "MSELossVR",
     "_num_extra_dims",
     "_predictions_and_expanded_targets",
 ]

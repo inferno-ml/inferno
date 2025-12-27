@@ -113,7 +113,7 @@ class BNNMixin(abc.ABC):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -121,7 +121,8 @@ class BNNMixin(abc.ABC):
         """Forward pass of the module.
 
         :param input: Input tensor.
-        :param sample_shape: Shape of samples.
+        :param sample_shape: Shape of samples. If None, runs a forward pass with just
+            the mean parameters.
         :param generator: Random number generator.
         :param input_contains_samples: Whether the input already contains
             samples. If True, the input is assumed to have ``len(sample_shape)``

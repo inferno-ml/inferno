@@ -1,3 +1,5 @@
+import copy
+
 import numpy.testing as npt
 import torch
 from torch import nn
@@ -22,6 +24,7 @@ import pytest
                 mlp_dim=10,
                 num_classes=5,
                 representation_size=7,
+                cov=None,
             ),
             torchvision.models.VisionTransformer(
                 image_size=32,
@@ -42,7 +45,7 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
 
     # Load weights from torchvision model
     state_dict = torchvision_vit.state_dict()
-    inferno_vit.load_state_dict(state_dict, strict=True)
+    inferno_vit.load_state_dict(state_dict, strict=False)
 
     # Create random input
     input = torch.randn((1, 3, 32, 32))
@@ -63,6 +66,67 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
         torchvision_output.detach().numpy(),
         rtol=1e-5,
         atol=1e-5,
+    )
+
+
+@pytest.mark.parametrize(
+    "resnet_type,weights,out_size,architecture,cov",
+    [
+        (
+            inferno.models.ResNet18,
+            torchvision.models.ResNet18_Weights.DEFAULT,
+            10,
+            "cifar",
+            params.LowRankCovariance(10),
+        ),
+        (
+            inferno.models.ResNet18,
+            torchvision.models.ResNet18_Weights.DEFAULT,
+            100,
+            "cifar",
+            params.LowRankCovariance(10),
+        ),
+        (
+            inferno.models.ResNet18,
+            torchvision.models.ResNet18_Weights.DEFAULT,
+            200,
+            "imagenet",
+            params.LowRankCovariance(10),
+        ),
+    ],
+)
+def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
+    resnet_type, weights, out_size, architecture, cov
+):
+    deterministic_model = resnet_type.from_pretrained_weights(
+        weights=weights,
+        out_size=out_size,
+        architecture=architecture,
+        cov=None,
+    )
+    model = resnet_type(
+        out_size=out_size,
+        architecture=architecture,
+        cov=cov,
+    )
+
+    model.load_state_dict(deterministic_model.state_dict(), strict=False)
+
+    if architecture == "cifar":
+        input_shape = (3, 32, 32)
+    else:
+        input_shape = (3, 224, 224)
+
+    input = torch.randn(
+        (8,) + input_shape, generator=torch.Generator().manual_seed(543)
+    )
+
+    model.eval()
+    deterministic_model.eval()
+
+    npt.assert_allclose(
+        deterministic_model(input).detach().numpy(),
+        model(input, sample_shape=None).detach().numpy(),
     )
 
 

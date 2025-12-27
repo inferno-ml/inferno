@@ -86,11 +86,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
                 stride=1,
                 padding=1,
                 bias=False,
-                cov=(
-                    copy.deepcopy(cov)
-                    if isinstance(cov, params.DiagonalCovariance)
-                    else copy.deepcopy(cov)
-                ),
+                cov=copy.deepcopy(cov),
                 parametrization=self.parametrization,
                 layer_type="input",
             )
@@ -102,11 +98,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
                 stride=2,
                 padding=3,
                 bias=False,
-                cov=(
-                    copy.deepcopy(cov)
-                    if isinstance(cov, params.DiagonalCovariance)
-                    else copy.deepcopy(cov)
-                ),
+                cov=copy.deepcopy(cov),
                 parametrization=self.parametrization,
                 layer_type="input",
             )
@@ -179,11 +171,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
             512 * block.expansion,
             out_size,
             parametrization=parametrization,
-            cov=(
-                copy.deepcopy(cov)
-                if isinstance(cov, params.DiagonalCovariance)
-                else copy.deepcopy(cov)
-            ),
+            cov=copy.deepcopy(cov),
             layer_type="output",
         )
 

@@ -8,6 +8,7 @@ from jaxtyping import Float
 import torch
 from torch import Tensor
 import torch.nn as nn
+import torchvision
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models._meta import _IMAGENET_CATEGORIES
 from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
@@ -18,22 +19,6 @@ from torchvision.utils import _log_api_usage_once
 # if TYPE_CHECKING:
 from .. import bnn
 from ..bnn import params
-
-"""
-__all__ = [
-    "VisionTransformer",
-    "ViT_B_16_Weights",
-    "ViT_B_32_Weights",
-    "ViT_L_16_Weights",
-    "ViT_L_32_Weights",
-    "ViT_H_14_Weights",
-    "vit_b_16",
-    "vit_b_32",
-    "vit_l_16",
-    "vit_l_32",
-    "vit_h_14",
-]
-"""
 
 
 class ConvStemConfig(NamedTuple):
@@ -455,6 +440,51 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             nn.init.zeros_(self.heads.head.weight)
             nn.init.zeros_(self.heads.head.bias)
 
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        weights: torchvision.models.Weights,
+        freeze: bool = False,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        *args,
+        **kwargs,
+    ):
+        """Load a VisionTransformer model with pretrained weights.
+
+        Depending on the ``out_size`` and ``architecture`` parameters, the first and last
+        layers of the model are not initialized with the pretrained weights.
+
+        :param out_size: Size of the output (i.e. number of classes).
+        :param weights: Pretrained weights to use.
+        :param freeze: Whether to freeze the pretrained weights.
+        :param architecture: Type of VisionTransformer architecture. Either "imagenet" or "cifar".
+        """
+        # Load and preprocess the pretrained weights
+        pretrained_weights = weights.get_state_dict(progress=True)
+        if architecture != "imagenet":
+            # Remove the first layer (conv_proj) from the pretrained weights
+            del pretrained_weights["conv_proj.weight"]
+
+        if out_size != pretrained_weights["head"].shape[0]:
+            # Remove the last layer (head) from the pretrained weights
+            del pretrained_weights["head.weight"]
+            del pretrained_weights["head.bias"]
+
+        # Model
+        model = cls(*args, **kwargs, out_size=out_size, architecture=architecture)
+        missing_keys, unexpected_keys = model.load_state_dict(
+            pretrained_weights, strict=False
+        )
+
+        if freeze:
+            # Freeze the pretrained weights
+            for name, param in model.named_parameters():
+                if name.replace(".params", "") in pretrained_weights:
+                    param.requires_grad = False
+
+        return model
+
     def _process_input(
         self,
         x: torch.Tensor,
@@ -544,3 +574,44 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         )
 
         return x
+
+
+class ViT_B_16(VisionTransformer):
+    """ViT_B_16
+
+    :param **kwargs: Additional keyword arguments passed on to [``VisionTransformer``][inferno.models.VisionTransformer].
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            patch_size=16,
+            num_layers=12,
+            num_heads=12,
+            hidden_dim=768,
+            mlp_dim=3072,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        weights: torchvision.models.Weights = torchvision.models.ViT_L_16_Weights.DEFAULT,
+        freeze: bool = False,
+        *args,
+        **kwargs,
+    ):
+        return super().from_pretrained_weights(
+            out_size=out_size,
+            architecture=architecture,
+            weights=weights,
+            freeze=freeze,
+            *args,
+            **kwargs,
+        )

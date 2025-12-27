@@ -198,3 +198,47 @@ def test_no_parametrization_given():
     for i, module in enumerate(model):
         if isinstance(module, bnn.BNNMixin):
             assert isinstance(module.parametrization, parametrizations[i])
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        bnn.Sequential(
+            bnn.Linear(5, 3, cov=params.FactorizedCovariance()),
+            nn.ReLU(),
+            bnn.Linear(3, 2, cov=None),
+            nn.ReLU(),
+            bnn.Linear(2, 2, cov=params.FactorizedCovariance()),
+            parametrization=params.MUP(),
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "idx",
+    [
+        slice(0, -1),
+        slice(0, 1),
+        0,
+        -1,
+    ],
+)
+def test_indexing_or_slicing_does_not_reset_parameters(model, idx):
+
+    # Get parameters before slicing
+    params_before = {name: param.clone() for name, param in model.named_parameters()}
+
+    # Slice the model
+    sliced_model = model[idx]
+
+    # Get parameters after slicing
+    params_after = {
+        name: param.clone() for name, param in sliced_model.named_parameters()
+    }
+
+    # Verify parameters haven't changed
+    for name in params_before:
+        if name in params_after:
+            torch.testing.assert_close(
+                params_before[name],
+                params_after[name],
+            )

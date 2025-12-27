@@ -45,16 +45,26 @@ def test_generalizes_pytorch_conv1d_layer(
     )
     bnn_conv_layer.params.weight = torch.nn.Parameter(conv_layer.weight)
     bnn_conv_layer.params.bias = torch.nn.Parameter(conv_layer.bias)
+
+    npt.assert_allclose(
+        conv_layer(input).detach().numpy(),
+        bnn_conv_layer(input, sample_shape=None, generator=generator).detach().numpy(),
+        atol=1e-6,
+        rtol=1e-6,
+    )
+
     if bnn_conv_layer.params.cov is not None:
         for name, param in bnn_conv_layer.params.cov.named_parameters():
             torch.nn.init.constant_(param, 0.0)
 
-    npt.assert_allclose(
-        conv_layer(input).detach().numpy(),
-        bnn_conv_layer(input, generator=generator).detach().numpy(),
-        atol=1e-6,
-        rtol=1e-6,
-    )
+        npt.assert_allclose(
+            conv_layer(input).detach().numpy(),
+            bnn_conv_layer(input, sample_shape=(), generator=generator)
+            .detach()
+            .numpy(),
+            atol=1e-6,
+            rtol=1e-6,
+        )
 
 
 @pytest.mark.parametrize("sample_shape", [(), (1,), (2,), (3, 2)])

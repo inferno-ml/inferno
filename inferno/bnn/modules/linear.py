@@ -172,20 +172,22 @@ class Linear(BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample *batch in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> Float[Tensor, "*sample *batch out_feature"]:
 
-        if (parameter_samples is None) and (self.params.cov is None):
+        if (
+            parameter_samples is None and self.params.cov is None
+        ) or sample_shape is None:
             output = nn.functional.linear(input, self.params.weight, self.params.bias)
 
             # Scale with inverse temperature if not training and the parameters are in the output layer
             if hasattr(self.params, "temperature") and not self.training:
                 output = output / self.params.temperature
 
-            if not input_contains_samples:
+            if not input_contains_samples and sample_shape is not None:
                 # Repeat output for each desired sample
                 output = output.expand(*sample_shape, *output.shape)
 

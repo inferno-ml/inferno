@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 import copy
-from typing import Callable
+import numbers
+from typing import TYPE_CHECKING, Callable, Union
 
+import numpy as np
+import torch
 from torch import nn
 
 from inferno import bnn
 from inferno.bnn import params
+
+if TYPE_CHECKING:
+    from jaxtyping import Float
+    from torch import Tensor
 
 
 class MLP(bnn.Sequential):
@@ -30,12 +38,12 @@ class MLP(bnn.Sequential):
         self,
         in_size: int,
         hidden_sizes: list[int],
-        out_size: int,
+        out_size: int | torch.Size,
         norm_layer: Callable[..., nn.Module] | None = None,
         activation_layer: Callable[..., nn.Module] | None = nn.ReLU,
         inplace: bool | None = None,
         bias: bool = True,
-        dropout: float = 0.0,
+        dropout: float | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance | list[params.FactorizedCovariance] | None
@@ -45,6 +53,9 @@ class MLP(bnn.Sequential):
         self.in_size = in_size
         self.hidden_sizes = hidden_sizes
         self.out_size = out_size
+        self._out_size_is_int = isinstance(
+            self.out_size, (int, torch.SymInt, numbers.Number)
+        )
         params = {} if inplace is None else {"inplace": inplace}
         cov_list = []
         if isinstance(cov, list):
@@ -74,7 +85,8 @@ class MLP(bnn.Sequential):
         if activation_layer is not None:
             layers.append(activation_layer(**params))
 
-        layers.append(nn.Dropout(dropout, **params))
+        if dropout is not None:
+            layers.append(nn.Dropout(dropout, **params))
 
         for idx_layer, (in_features, out_features) in enumerate(
             zip(self.hidden_sizes[0:-1], self.hidden_sizes[1:])
@@ -85,14 +97,15 @@ class MLP(bnn.Sequential):
                     out_features=out_features,
                     bias=bias,
                     cov=cov_list[idx_layer + 1],
-                )
+                ),
             )
             if norm_layer is not None:
                 layers.append(norm_layer(out_features))
             if activation_layer is not None:
                 layers.append(activation_layer(**params))
 
-            layers.append(nn.Dropout(dropout, **params))
+            if dropout is not None:
+                layers.append(nn.Dropout(dropout, **params))
 
         layers.append(
             bnn.Linear(
@@ -101,12 +114,47 @@ class MLP(bnn.Sequential):
                     if len(self.hidden_sizes) > 0
                     else self.in_size
                 ),
-                out_features=self.out_size,
+                out_features=(
+                    self.out_size
+                    if self._out_size_is_int
+                    else np.prod(self.out_size + (1,))
+                ),
                 bias=bias,
                 layer_type="output",
                 cov=cov_list[-1],
-            )
+            ),
         )
-        layers.append(nn.Dropout(dropout, **params))
+
+        if dropout is not None:
+            layers.append(nn.Dropout(dropout, **params))
 
         super().__init__(*layers, parametrization=parametrization)
+
+    def __getitem__(self, idx: Union[slice, int]) -> bnn.Sequential:
+        if isinstance(idx, slice):
+            return bnn.Sequential(OrderedDict(list(self._modules.items())[idx]))
+        else:
+            return super().__getitem__(idx)
+
+    def forward(
+        self,
+        input: Float[Tensor, "*batch in_feature"],
+        /,
+        sample_shape: torch.Size | None = torch.Size([]),
+        generator: torch.Generator | None = None,
+        input_contains_samples: bool = False,
+        parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
+    ) -> Float[Tensor, "*sample *batch out_feature"]:
+
+        out = super().forward(
+            input,
+            sample_shape=sample_shape,
+            generator=generator,
+            input_contains_samples=input_contains_samples,
+            parameter_samples=parameter_samples,
+        )
+
+        if not self._out_size_is_int:
+            out = out.reshape(out.shape[0:-1] + tuple(self.out_size))
+
+        return out

@@ -86,11 +86,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
                 stride=1,
                 padding=1,
                 bias=False,
-                cov=(
-                    copy.deepcopy(cov)
-                    if isinstance(cov, params.DiagonalCovariance)
-                    else copy.deepcopy(cov)
-                ),
+                cov=copy.deepcopy(cov),
                 parametrization=self.parametrization,
                 layer_type="input",
             )
@@ -102,11 +98,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
                 stride=2,
                 padding=3,
                 bias=False,
-                cov=(
-                    copy.deepcopy(cov)
-                    if isinstance(cov, params.DiagonalCovariance)
-                    else copy.deepcopy(cov)
-                ),
+                cov=copy.deepcopy(cov),
                 parametrization=self.parametrization,
                 layer_type="input",
             )
@@ -179,11 +171,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
             512 * block.expansion,
             out_size,
             parametrization=parametrization,
-            cov=(
-                copy.deepcopy(cov)
-                if isinstance(cov, params.DiagonalCovariance)
-                else copy.deepcopy(cov)
-            ),
+            cov=copy.deepcopy(cov),
             layer_type="output",
         )
 
@@ -330,12 +318,19 @@ class ResNet(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> Float[Tensor, "*sample *batch *out_feature"]:
-        # See note [TorchScript super()]
+        """Implementation of forward which is compatible with TorchScript.
+
+        It serves as an internal, TorchScript-friendly version of the standard forward method,
+        allowing for model tracing and compilation for deployment while preserving the flexibility
+        of the standard forward method in eager execution.
+        """
+
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
 
         out = self.conv1(
             input,
@@ -344,11 +339,11 @@ class ResNet(bnn.BNNMixin, nn.Module):
             input_contains_samples=input_contains_samples,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn1, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn1, num_batch_dims=num_sample_dims + 1)(out)
         out = self.relu(out)
         if self.optional_pool is not None:
             out = bnn.batched_forward(
-                self.optional_pool, num_batch_dims=len(sample_shape) + 1
+                self.optional_pool, num_batch_dims=num_sample_dims + 1
             )(out)
 
         out = self.layer1(
@@ -380,9 +375,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
             parameter_samples=parameter_samples,
         )
 
-        out = bnn.batched_forward(self.avgpool, num_batch_dims=len(sample_shape) + 1)(
-            out
-        )
+        out = bnn.batched_forward(self.avgpool, num_batch_dims=num_sample_dims + 1)(out)
         out = torch.flatten(out, -3)
 
         final_layer_forward_kwargs = {}
@@ -406,7 +399,7 @@ class ResNet(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -492,11 +485,13 @@ class BasicBlock(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> Float[Tensor, "*sample *batch *out_feature"]:
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
+
         identity = input
 
         out = self.conv1(
@@ -506,7 +501,7 @@ class BasicBlock(bnn.BNNMixin, nn.Module):
             input_contains_samples=input_contains_samples,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn1, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn1, num_batch_dims=num_sample_dims + 1)(out)
         out = self.relu(out)
 
         out = self.conv2(
@@ -516,7 +511,7 @@ class BasicBlock(bnn.BNNMixin, nn.Module):
             input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn2, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn2, num_batch_dims=num_sample_dims + 1)(out)
 
         if self.downsample is not None:
             identity = self.downsample(
@@ -620,11 +615,13 @@ class Bottleneck(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> Float[Tensor, "*sample *batch *out_feature"]:
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
+
         identity = input
 
         out = self.conv1(
@@ -634,7 +631,7 @@ class Bottleneck(bnn.BNNMixin, nn.Module):
             input_contains_samples=input_contains_samples,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn1, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn1, num_batch_dims=num_sample_dims + 1)(out)
         out = self.relu(out)
 
         out = self.conv2(
@@ -644,7 +641,7 @@ class Bottleneck(bnn.BNNMixin, nn.Module):
             input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn2, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn2, num_batch_dims=num_sample_dims + 1)(out)
         out = self.relu(out)
 
         out = self.conv3(
@@ -654,7 +651,7 @@ class Bottleneck(bnn.BNNMixin, nn.Module):
             input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
-        out = bnn.batched_forward(self.bn3, num_batch_dims=len(sample_shape) + 1)(out)
+        out = bnn.batched_forward(self.bn3, num_batch_dims=num_sample_dims + 1)(out)
 
         if self.downsample is not None:
             identity = self.downsample(

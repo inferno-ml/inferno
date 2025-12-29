@@ -17,7 +17,7 @@ from torchvision.transforms._presets import ImageClassification, InterpolationMo
 from torchvision.utils import _log_api_usage_once
 
 # if TYPE_CHECKING:
-from .. import bnn
+from .. import bnn, models
 from ..bnn import params
 
 
@@ -195,10 +195,23 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
 
         # MLP block
         self.ln_2 = norm_layer(hidden_dim)
+
+        """
         self.mlp = MLPBlock(
             hidden_dim,
             mlp_dim,
             dropout,
+            cov=cov["mlp"],
+            parametrization=parametrization,
+        )
+        """
+
+        self.mlp = models.MLP(
+            hidden_dim,
+            [mlp_dim],
+            hidden_dim,
+            activation_layer=nn.GELU,
+            dropout=dropout,
             cov=cov["mlp"],
             parametrization=parametrization,
         )

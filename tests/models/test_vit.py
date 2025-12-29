@@ -134,12 +134,16 @@ def test_draw_samples():
     """Test whether the model can draw samples."""
     torch.manual_seed(0)
 
-    # Create a ResNet model
-    model = inferno.models.ResNet(
-        block=inferno.models.resnet.BasicBlock,
-        num_blocks_per_layer=[2, 2, 2, 2],
-        cov=params.KroneckerCovariance(),
-        out_size=1000,
+    # Create a VisionTransformer model
+    model = inferno.models.VisionTransformer(
+        image_size=224,
+        patch_size=16,
+        num_layers=2,
+        num_heads=2,
+        hidden_dim=128,
+        mlp_dim=10,
+        num_classes=1000,
+        cov=params.LowRankCovariance(10),
     )
 
     # Create random input

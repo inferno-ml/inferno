@@ -316,6 +316,10 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
+            raise NotImplementedError(
+                "conv_stem_configs currently not supported in inferno "
+                "because there is no Conv2dNormActivation implementation."
+            )
             seq_proj = nn.Sequential()
             prev_channels = 3
             for i, conv_stem_layer_config in enumerate(conv_stem_configs):

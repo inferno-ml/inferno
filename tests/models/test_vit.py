@@ -45,7 +45,7 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
 
     # Load weights from torchvision model
     state_dict = torchvision_vit.state_dict()
-    inferno_vit.load_state_dict(state_dict, strict=False)
+    inferno_vit.load_state_dict(state_dict, strict=True)
 
     # Create random input
     input = torch.randn((1, 3, 32, 32))
@@ -70,41 +70,41 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
 
 
 @pytest.mark.parametrize(
-    "resnet_type,weights,out_size,architecture,cov",
+    "vit_type,weights,out_size,architecture,cov",
     [
         (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
+            inferno.models.ViT_B_16,
+            torchvision.models.ViT_L_16_Weights.DEFAULT,
             10,
             "cifar",
             params.LowRankCovariance(10),
         ),
-        (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
-            100,
-            "cifar",
-            params.LowRankCovariance(10),
-        ),
-        (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
-            200,
-            "imagenet",
-            params.LowRankCovariance(10),
-        ),
+        # (
+        #    inferno.models.ResNet18,
+        #    torchvision.models.ResNet18_Weights.DEFAULT,
+        #    100,
+        #    "cifar",
+        #    params.LowRankCovariance(10),
+        # ),
+        # (
+        #    inferno.models.ResNet18,
+        #    torchvision.models.ResNet18_Weights.DEFAULT,
+        #    200,
+        #    "imagenet",
+        #    params.LowRankCovariance(10),
+        # ),
     ],
 )
 def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
-    resnet_type, weights, out_size, architecture, cov
+    vit_type, weights, out_size, architecture, cov
 ):
-    deterministic_model = resnet_type.from_pretrained_weights(
+    deterministic_model = vit_type.from_pretrained_weights(
         weights=weights,
         out_size=out_size,
         architecture=architecture,
         cov=None,
     )
-    model = resnet_type(
+    model = vit_type(
         out_size=out_size,
         architecture=architecture,
         cov=cov,
@@ -171,69 +171,94 @@ def test_batch_norm_raises_value_error():
 
 
 @pytest.mark.parametrize(
-    "resnet_type,weights,out_size,architecture,cov,freeze",
+    "vit_type,weights,out_size,architecture,cov,freeze",
     [
         (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
+            inferno.models.ViT_B_16,
+            torchvision.models.ViT_B_16_Weights.DEFAULT,
             10,
             "cifar",
             None,
             False,
         ),
-        (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
-            100,
-            "cifar",
-            params.LowRankCovariance(100),
-            True,
-        ),
-        (
-            inferno.models.ResNet18,
-            torchvision.models.ResNet18_Weights.DEFAULT,
-            200,
-            "imagenet",
-            None,
-            False,
-        ),
-        (
-            inferno.models.ResNet34,
-            torchvision.models.ResNet34_Weights.DEFAULT,
-            1000,
-            "imagenet",
-            params.LowRankCovariance(100),
-            True,
-        ),
+        # (
+        #    inferno.models.ViT_B_16,
+        #    torchvision.models.ViT_B_16_Weights.DEFAULT,
+        #    10,
+        #    "cifar",
+        #    None,
+        #    False,
+        # ),
+        # (
+        #    inferno.models.ResNet18,
+        #    torchvision.models.ResNet18_Weights.DEFAULT,
+        #    100,
+        #    "cifar",
+        #    params.LowRankCovariance(100),
+        #    True,
+        # ),
+        # (
+        #    inferno.models.ResNet18,
+        #    torchvision.models.ResNet18_Weights.DEFAULT,
+        #    200,
+        #    "imagenet",
+        #    None,
+        #    False,
+        # ),
+        # (
+        #    inferno.models.ResNet34,
+        #    torchvision.models.ResNet34_Weights.DEFAULT,
+        #    1000,
+        #    "imagenet",
+        #    params.LowRankCovariance(100),
+        #    True,
+        # ),
     ],
 )
 def test_from_pretrained_weights(
-    resnet_type, weights, out_size, architecture, cov, freeze
+    vit_type, weights, out_size, architecture, cov, freeze
 ):
     """Test whether the model can be loaded with pretrained weights."""
     torch.manual_seed(0)
 
-    pretrained_model = resnet_type.from_pretrained_weights(
+    pretrained_model = vit_type.from_pretrained_weights(
         weights=weights,
         out_size=out_size,
         architecture=architecture,
         cov=cov,
         freeze=freeze,
+        image_size=32 if architecture == "cifar" else 224,
     )
 
     pretrained_weights_state_dict = weights.get_state_dict()
 
     # Check whether weights are loaded correctly
     npt.assert_allclose(
-        pretrained_model.state_dict()["layer1.1.conv1.params.weight"].detach().numpy(),
-        pretrained_weights_state_dict["layer1.1.conv1.weight"].detach().numpy(),
+        pretrained_model.state_dict()[
+            "encoder.layers.encoder_layer_0.self_attention.out_proj.params.weight"
+        ]
+        .detach()
+        .numpy(),
+        pretrained_weights_state_dict[
+            "encoder.layers.encoder_layer_0.self_attention.out_proj.weight"
+        ]
+        .detach()
+        .numpy(),
         rtol=1e-5,
         atol=1e-5,
     )
 
     npt.assert_allclose(
-        pretrained_model.state_dict()["layer2.1.conv1.params.weight"].detach().numpy(),
-        pretrained_weights_state_dict["layer2.1.conv1.weight"].detach().numpy(),
+        pretrained_model.state_dict()[
+            "encoder.layers.encoder_layer_1.self_attention.out_proj.params.weight"
+        ]
+        .detach()
+        .numpy(),
+        pretrained_weights_state_dict[
+            "encoder.layers.encoder_layer_1.self_attention.out_proj.weight"
+        ]
+        .detach()
+        .numpy(),
         rtol=1e-5,
         atol=1e-5,
     )

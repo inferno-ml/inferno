@@ -18,7 +18,7 @@ from .resnet import (
     WideResNet50,
     WideResNet101,
 )
-from .vit import VisionTransformer
+from .vit import VisionTransformer, ViT_B_16
 
 ___all__ = [
     "Ensemble",

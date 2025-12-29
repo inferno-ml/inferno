@@ -341,6 +341,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
         conv_stem_configs: Optional[list[ConvStemConfig]] = None,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
         parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance
@@ -515,14 +516,18 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         if architecture != "imagenet":
             # Remove the first layer (conv_proj) from the pretrained weights
             del pretrained_weights["conv_proj.weight"]
+            del pretrained_weights["conv_proj.bias"]
 
-        if out_size != pretrained_weights["head"].shape[0]:
+            # Remove the positional embeddings
+            del pretrained_weights["encoder.pos_embedding"]
+
+        if out_size != pretrained_weights["heads.head.weight"].shape[0]:
             # Remove the last layer (head) from the pretrained weights
-            del pretrained_weights["head.weight"]
-            del pretrained_weights["head.bias"]
+            del pretrained_weights["heads.head.weight"]
+            del pretrained_weights["heads.head.bias"]
 
         # Model
-        model = cls(*args, **kwargs, out_size=out_size, architecture=architecture)
+        model = cls(*args, **kwargs, num_classes=out_size, architecture=architecture)
         missing_keys, unexpected_keys = model.load_state_dict(
             pretrained_weights, strict=False
         )
@@ -608,7 +613,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             x,
             sample_shape=sample_shape,
             generator=generator,
-            input_contains_samples=True,  # Beau: what should this be?
+            input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
 
@@ -619,7 +624,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             x,
             sample_shape=sample_shape,
             generator=generator,
-            input_contains_samples=True,  # Beau: what should this be?
+            input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
 

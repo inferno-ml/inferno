@@ -113,11 +113,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
     ):
         super().__init__()
         self.num_heads = num_heads
-
-        if cov is None:
-            cov = {key: None for key in ["self_attention", "mlp"]}
-        elif isinstance(cov, params.FactorizedCovariance):
-            cov = {key: copy.deepcopy(cov) for key in ["self_attention", "mlp"]}
+        cov = check_cov(cov, ["self_attention", "mlp"])
 
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
@@ -196,16 +192,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         ) = None,
     ):
         super().__init__()
-
-        if cov is None:
-            cov = {
-                key: None for key in [f"encoder_layer_{i}" for i in range(num_layers)]
-            }
-        elif isinstance(cov, params.FactorizedCovariance):
-            cov = {
-                key: copy.deepcopy(cov)
-                for key in [f"encoder_layer_{i}" for i in range(num_layers)]
-            }
+        cov = check_cov(cov, [f"encoder_layer_{i}" for i in range(num_layers)])
 
         # Note that batch_size is on the first dim because
         # we have batch_first=True in nn.MultiAttention() by default
@@ -305,14 +292,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 "See also: https://pytorch.org/docs/stable/func.batch_norm.html#patching-batch-norm."
             )
         self.norm_layer = norm_layer
-
-        if cov is None:
-            cov = {key: None for key in ["conv_proj", "encoder", "pre_logits", "head"]}
-        elif isinstance(cov, params.FactorizedCovariance):
-            cov = {
-                key: copy.deepcopy(cov)
-                for key in ["conv_proj", "encoder", "pre_logits", "head"]
-            }
+        cov = check_cov(cov, ["conv_proj", "encoder", "pre_logits", "head"])
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
@@ -793,3 +773,25 @@ class ViT_H_14(VisionTransformer):
             *args,
             **kwargs,
         )
+
+
+def check_cov(
+    cov: params.FactorizedCovariance | dict[str, Any] | None,
+    required_cov_keys: list[str],
+):
+    """
+    Converts cov to a dictionary with required_cov_keys or fills in missing keys with default covariance None
+
+    :param cov: covariance or dictionary of covariances or None
+    :param required_cov_keys: covariance keys required by this module
+    """
+    if cov is None:
+        cov = {key: None for key in required_cov_keys}
+    elif isinstance(cov, params.FactorizedCovariance):
+        cov = {key: copy.deepcopy(cov) for key in required_cov_keys}
+    elif isinstance(cov, dict):
+        # default cov is None
+        for key in required_cov_keys:
+            if key not in cov.keys():
+                cov[key] = None
+    return cov

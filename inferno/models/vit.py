@@ -1,12 +1,12 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 import copy
 from functools import partial
 import math
 from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
 
-from jaxtyping import Float
 import torch
-from torch import Tensor
 import torch.nn as nn
 import torchvision
 from torchvision.models._api import Weights, WeightsEnum
@@ -21,7 +21,8 @@ from ..bnn import params
 from ..models import MLP
 
 if TYPE_CHECKING:
-    pass
+    from jaxtyping import Float
+    from torch import Tensor
 
 
 class ConvStemConfig(NamedTuple):
@@ -144,7 +145,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch_size seq_length hidden_dim"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -231,7 +232,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         self,
         input: Float[Tensor, "*sample batch_size seq_length hidden_dim"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
@@ -537,9 +538,9 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
     def forward(
         self,
-        x: torch.Tensor,
+        x: Float[Tensor, "*sample batch *in_feature"],
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,

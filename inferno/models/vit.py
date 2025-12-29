@@ -57,6 +57,7 @@ class MLP(bnn.Sequential):
         inplace: Optional[bool] = None,
         bias: bool = True,
         dropout: float = 0.0,
+        parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: params.FactorizedCovariance | None = None,
     ):
         # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
@@ -66,14 +67,30 @@ class MLP(bnn.Sequential):
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels[:-1]:
-            layers.append(bnn.Linear(in_dim, hidden_dim, bias=bias, cov=cov))
+            layers.append(
+                bnn.Linear(
+                    in_dim,
+                    hidden_dim,
+                    bias=bias,
+                    parametrization=parametrization,
+                    cov=cov,
+                )
+            )
             if norm_layer is not None:
                 layers.append(norm_layer(hidden_dim))
             layers.append(activation_layer(**params))
             layers.append(torch.nn.Dropout(dropout, **params))
             in_dim = hidden_dim
 
-        layers.append(bnn.Linear(in_dim, hidden_channels[-1], bias=bias, cov=cov))
+        layers.append(
+            bnn.Linear(
+                in_dim,
+                hidden_channels[-1],
+                bias=bias,
+                parametrization=parametrization,
+                cov=cov,
+            )
+        )
         layers.append(torch.nn.Dropout(dropout, **params))
 
         super().__init__(*layers)
@@ -90,6 +107,7 @@ class MLPBlock(MLP):
         in_dim: int,
         mlp_dim: int,
         dropout: float,
+        parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: params.FactorizedCovariance | None = None,
     ):
         super().__init__(
@@ -98,6 +116,7 @@ class MLPBlock(MLP):
             activation_layer=nn.GELU,
             inplace=None,
             dropout=dropout,
+            parametrization=parametrization,
             cov=cov,
         )
 
@@ -150,6 +169,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         dropout: float,
         attention_dropout: float,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
+        parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance | dict[params.FactorizedCovariance] | None
         ) = None,
@@ -165,13 +185,23 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
         self.self_attention = bnn.MultiheadAttention(
-            hidden_dim, num_heads, dropout=attention_dropout, cov=cov["self_attention"]
+            hidden_dim,
+            num_heads,
+            dropout=attention_dropout,
+            parametrization=parametrization,
+            cov=cov["self_attention"],
         )
         self.dropout = nn.Dropout(dropout)
 
         # MLP block
         self.ln_2 = norm_layer(hidden_dim)
-        self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout, cov=cov["mlp"])
+        self.mlp = MLPBlock(
+            hidden_dim,
+            mlp_dim,
+            dropout,
+            cov=cov["mlp"],
+            parametrization=parametrization,
+        )
 
     def forward(
         self,
@@ -223,6 +253,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         dropout: float,
         attention_dropout: float,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
+        parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance
             | dict[params.FactorizedCovariance]
@@ -257,6 +288,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
                 dropout,
                 attention_dropout,
                 norm_layer,
+                parametrization=parametrization,
                 cov=cov[f"encoder_layer_{i}"],
             )
         self.layers = bnn.Sequential(layers)
@@ -309,6 +341,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
         conv_stem_configs: Optional[list[ConvStemConfig]] = None,
+        parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance
             | dict[params.FactorizedCovariance]
@@ -316,7 +349,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             | None
         ) = None,
     ):
-        super().__init__()
+        super().__init__(parametrization=parametrization)
         _log_api_usage_once(self)
         torch._assert(
             image_size % patch_size == 0, "Input shape indivisible by patch size!"
@@ -370,6 +403,8 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 kernel_size=patch_size,
                 stride=patch_size,
                 cov=cov["conv_proj"],
+                parametrization=parametrization,
+                layer_type="input",
             )
 
         seq_length = (image_size // patch_size) ** 2
@@ -387,20 +422,35 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             dropout,
             attention_dropout,
             norm_layer,
+            parametrization=parametrization,
             cov=cov["encoder"],
         )
         self.seq_length = seq_length
 
         heads_layers: OrderedDict[str, nn.Module] = OrderedDict()
         if representation_size is None:
-            heads_layers["head"] = bnn.Linear(hidden_dim, num_classes, cov=cov["head"])
+            heads_layers["head"] = bnn.Linear(
+                hidden_dim,
+                num_classes,
+                parametrization=parametrization,
+                cov=cov["head"],
+                layer_type="output",
+            )
         else:
             heads_layers["pre_logits"] = bnn.Linear(
-                hidden_dim, representation_size, cov=cov["pre_logits"]
+                hidden_dim,
+                representation_size,
+                parametrization=parametrization,
+                cov=cov["pre_logits"],
+                layer_type="hidden",
             )
             heads_layers["act"] = nn.Tanh()
             heads_layers["head"] = bnn.Linear(
-                representation_size, num_classes, cov=cov["head"]
+                representation_size,
+                num_classes,
+                parametrization=parametrization,
+                cov=cov["head"],
+                layer_type="output",
             )
 
         self.heads = bnn.Sequential(heads_layers)

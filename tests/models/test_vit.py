@@ -1,8 +1,7 @@
 import copy
 
-import numpy.testing as npt
 import torch
-from torch import nn
+from torch import nn, testing
 import torchvision
 
 import inferno
@@ -61,9 +60,9 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
         torchvision_output = torchvision_vit(input)
 
     # Compare the outputs
-    npt.assert_allclose(
-        inferno_output.detach().numpy(),
-        torchvision_output.detach().numpy(),
+    testing.assert_close(
+        inferno_output,
+        torchvision_output,
         rtol=1e-5,
         atol=1e-5,
     )
@@ -126,9 +125,9 @@ def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
     model.eval()
     deterministic_model.eval()
 
-    npt.assert_allclose(
-        deterministic_model(input).detach().numpy(),
-        model(input, sample_shape=None).detach().numpy(),
+    testing.assert_close(
+        deterministic_model(input),
+        model(input, sample_shape=None),
     )
 
 
@@ -191,22 +190,14 @@ def test_batch_norm_raises_value_error():
             None,
             False,
         ),
-        # (
-        #    inferno.models.ViT_B_16,
-        #    torchvision.models.ViT_B_16_Weights.DEFAULT,
-        #    10,
-        #    "cifar",
-        #    None,
-        #    False,
-        # ),
-        # (
-        #    inferno.models.ResNet18,
-        #    torchvision.models.ResNet18_Weights.DEFAULT,
-        #    100,
-        #    "cifar",
-        #    params.LowRankCovariance(100),
-        #    True,
-        # ),
+        (
+            inferno.models.ViT_B_16,
+            torchvision.models.ViT_B_16_Weights.DEFAULT,
+            100,
+            "cifar",
+            params.LowRankCovariance(10),
+            True,
+        ),
         # (
         #    inferno.models.ResNet18,
         #    torchvision.models.ResNet18_Weights.DEFAULT,
@@ -242,7 +233,7 @@ def test_from_pretrained_weights(
     pretrained_weights_state_dict = weights.get_state_dict()
 
     # Check whether weights are loaded correctly
-    npt.assert_allclose(
+    testing.assert_close(
         pretrained_model.state_dict()[
             "encoder.layers.encoder_layer_0.self_attention.out_proj.params.weight"
         ]
@@ -257,7 +248,7 @@ def test_from_pretrained_weights(
         atol=1e-5,
     )
 
-    npt.assert_allclose(
+    testing.assert_close(
         pretrained_model.state_dict()[
             "encoder.layers.encoder_layer_1.self_attention.out_proj.params.weight"
         ]
@@ -277,9 +268,11 @@ def test_from_pretrained_weights(
         for name, param in pretrained_model.named_parameters():
             if name.replace(".params", "") in pretrained_weights_state_dict:
                 if name in [
-                    "conv1.params.weight",
-                    "fc.params.weight",
-                    "fc.params.bias",
+                    "conv_proj.params.weight",
+                    "conv_proj.params.bias",
+                    "encoder.pos_embedding",
+                    "heads.head.params.weight",
+                    "heads.head.params.bias",
                 ]:
                     # First and last layer may be trainable
                     continue

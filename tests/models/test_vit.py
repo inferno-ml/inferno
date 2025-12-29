@@ -70,25 +70,28 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
 
 
 @pytest.mark.parametrize(
-    "vit_type,weights,out_size,architecture,cov",
+    "vit_type,out_size,architecture,cov",
     [
+        # (
+        #    inferno.models.ViT_B_16,
+        #    10,
+        #    "cifar",
+        #    params.LowRankCovariance(10),
+        # ),
         (
             inferno.models.ViT_B_16,
-            torchvision.models.ViT_B_16_Weights.DEFAULT,
-            10,
-            "cifar",
-            params.LowRankCovariance(10),
+            1000,
+            "imagenet",
+            params.LowRankCovariance(2),
         ),
         # (
-        #    inferno.models.ResNet18,
-        #    torchvision.models.ResNet18_Weights.DEFAULT,
+        #    inferno.models.ResNet18,v
         #    100,
         #    "cifar",
         #    params.LowRankCovariance(10),
         # ),
         # (
         #    inferno.models.ResNet18,
-        #    torchvision.models.ResNet18_Weights.DEFAULT,
         #    200,
         #    "imagenet",
         #    params.LowRankCovariance(10),
@@ -96,10 +99,9 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
     ],
 )
 def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
-    vit_type, weights, out_size, architecture, cov
+    vit_type, out_size, architecture, cov
 ):
     deterministic_model = vit_type.from_pretrained_weights(
-        weights=weights,
         out_size=out_size,
         architecture=architecture,
         cov=None,
@@ -165,12 +167,16 @@ def test_batch_norm_raises_value_error():
     torch.manual_seed(0)
 
     with pytest.raises(ValueError):
-        # Create a ResNet model with batch normalization
-        model = inferno.models.ResNet(
-            block=inferno.models.resnet.BasicBlock,
-            num_blocks_per_layer=[2, 2, 2, 2],
-            norm_layer=nn.BatchNorm2d,
+        # Create a VisionTransformer model with batch normalization
+        model = inferno.models.VisionTransformer(
+            in_size=224,
+            patch_size=16,
+            num_layers=2,
+            num_heads=2,
+            hidden_dim=128,
+            mlp_dim=10,
             out_size=1000,
+            norm_layer=nn.BatchNorm2d,
         )
 
 

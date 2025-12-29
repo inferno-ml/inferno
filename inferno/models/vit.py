@@ -149,10 +149,6 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ):
-        # torch._assert(
-        #    input.dim() == 3,
-        #    f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
-        # )
         x = self.ln_1(input)
         x = self.self_attention(
             x,
@@ -240,10 +236,6 @@ class Encoder(bnn.BNNMixin, nn.Module):
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ):
-        # torch._assert(
-        #    input.dim() == 3,
-        #    f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
-        # )
         num_sample_dims = 0 if sample_shape is None else len(sample_shape)
 
         if sample_shape is not None:
@@ -305,6 +297,12 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         self.dropout = dropout
         self.out_size = out_size
         self.representation_size = representation_size
+        if norm_layer is nn.BatchNorm2d:
+            raise ValueError(
+                "BatchNorm is currently not supported due to incompatibility of "
+                "torch.vmap with the 'running_stats' tracked by BatchNorm."
+                "See also: https://pytorch.org/docs/stable/func.batch_norm.html#patching-batch-norm."
+            )
         self.norm_layer = norm_layer
 
         if cov is None:
@@ -533,7 +531,6 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         # The self attention layer expects inputs in the format (N, S, E)
         # where S is the source sequence length, N is the batch size, E is the
         # embedding dimension
-        # x = x.permute(0, 2, 1)
         x = x.transpose(-2, -1)
 
         return x

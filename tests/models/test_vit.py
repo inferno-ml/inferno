@@ -74,7 +74,7 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
     [
         (
             inferno.models.ViT_B_16,
-            torchvision.models.ViT_L_16_Weights.DEFAULT,
+            torchvision.models.ViT_B_16_Weights.DEFAULT,
             10,
             "cifar",
             params.LowRankCovariance(10),
@@ -103,11 +103,13 @@ def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
         out_size=out_size,
         architecture=architecture,
         cov=None,
+        image_size=32 if architecture == "cifar" else 224,
     )
     model = vit_type(
-        out_size=out_size,
+        num_classes=out_size,
         architecture=architecture,
         cov=cov,
+        image_size=32 if architecture == "cifar" else 224,
     )
 
     model.load_state_dict(deterministic_model.state_dict(), strict=False)

@@ -320,9 +320,15 @@ class Encoder(bnn.BNNMixin, nn.Module):
         #    input.dim() == 3,
         #    f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}",
         # )
-        input = input + self.pos_embedding.expand(
-            *sample_shape, *self.pos_embedding.shape
-        )
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
+
+        if sample_shape is not None:
+            input = input + self.pos_embedding.expand(
+                *sample_shape, *self.pos_embedding.shape
+            )
+        else:
+            input = input + self.pos_embedding
+
         output = self.dropout(input)
         output = self.layers(
             output,
@@ -331,7 +337,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
             input_contains_samples=input_contains_samples,
             parameter_samples=parameter_samples,
         )
-        output = bnn.batched_forward(self.ln, num_batch_dims=len(sample_shape) + 1)(
+        output = bnn.batched_forward(self.ln, num_batch_dims=num_sample_dims + 1)(
             output
         )
         return output
@@ -557,13 +563,15 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         self,
         x: torch.Tensor,
         /,
-        sample_shape: torch.Size = torch.Size([]),
+        sample_shape: torch.Size | None = torch.Size([]),
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ) -> torch.Tensor:
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
+
         if input_contains_samples:
-            n, c, h, w = x.shape[len(sample_shape) :]
+            n, c, h, w = x.shape[num_sample_dims:]
         else:
             n, c, h, w = x.shape
 
@@ -588,7 +596,10 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             parameter_samples=parameter_samples,
         )
         # (n, hidden_dim, n_h, n_w) -> (n, hidden_dim, (n_h * n_w))
-        x = x.reshape(*sample_shape, n, self.hidden_dim, n_h * n_w)
+        if sample_shape is not None:
+            x = x.reshape(*sample_shape, n, self.hidden_dim, n_h * n_w)
+        else:
+            x = x.reshape(n, self.hidden_dim, n_h * n_w)
 
         # (*sample_shape, n, hidden_dim, (n_h * n_w)) -> (*sample_shape, n, (n_h * n_w), hidden_dim)
         # The self attention layer expects inputs in the format (N, S, E)
@@ -608,6 +619,8 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
     ):
+        num_sample_dims = 0 if sample_shape is None else len(sample_shape)
+
         # Reshape and permute the input tensor
         x = self._process_input(
             x,
@@ -616,10 +629,13 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             input_contains_samples=input_contains_samples,
             parameter_samples=parameter_samples,
         )
-        n = x.shape[len(sample_shape)]
+        n = x.shape[num_sample_dims]
 
         # Expand the class token to the full batch
-        batch_class_token = self.class_token.expand(*sample_shape, n, -1, -1)
+        if sample_shape is not None:
+            batch_class_token = self.class_token.expand(*sample_shape, n, -1, -1)
+        else:
+            batch_class_token = self.class_token.expand(n, -1, -1)
         x = torch.cat([batch_class_token, x], dim=-2)
 
         x = self.encoder(
@@ -631,7 +647,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         )
 
         # Classifier "token" as used by standard language architectures
-        x = torch.select(x, len(sample_shape) + 1, 0)
+        x = torch.select(x, num_sample_dims + 1, 0)
 
         x = self.heads(
             x,
@@ -670,7 +686,7 @@ class ViT_B_16(VisionTransformer):
         cls,
         out_size: int,
         architecture: Literal["imagenet", "cifar"] = "imagenet",
-        weights: torchvision.models.Weights = torchvision.models.ViT_L_16_Weights.DEFAULT,
+        weights: torchvision.models.Weights = torchvision.models.ViT_B_16_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,

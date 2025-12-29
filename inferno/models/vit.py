@@ -16,10 +16,12 @@ from torchvision.ops.misc import MLP, Conv2dNormActivation
 from torchvision.transforms._presets import ImageClassification, InterpolationMode
 from torchvision.utils import _log_api_usage_once
 
-# if TYPE_CHECKING:
 from .. import bnn
 from ..bnn import params
 from ..models import MLP
+
+if TYPE_CHECKING:
+    pass
 
 
 class ConvStemConfig(NamedTuple):
@@ -613,6 +615,170 @@ class ViT_B_16(VisionTransformer):
         out_size: int,
         architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_B_16_Weights.DEFAULT,
+        freeze: bool = False,
+        *args,
+        **kwargs,
+    ):
+        return super().from_pretrained_weights(
+            out_size=out_size,
+            architecture=architecture,
+            weights=weights,
+            freeze=freeze,
+            *args,
+            **kwargs,
+        )
+
+
+class ViT_B_32(VisionTransformer):
+    """ViT_B_32
+
+    :param **kwargs: Additional keyword arguments passed on to [``VisionTransformer``][inferno.models.VisionTransformer].
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            patch_size=32,
+            num_layers=12,
+            num_heads=12,
+            hidden_dim=768,
+            mlp_dim=3072,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        weights: torchvision.models.Weights = torchvision.models.ViT_B_32_Weights.DEFAULT,
+        freeze: bool = False,
+        *args,
+        **kwargs,
+    ):
+        return super().from_pretrained_weights(
+            out_size=out_size,
+            architecture=architecture,
+            weights=weights,
+            freeze=freeze,
+            *args,
+            **kwargs,
+        )
+
+
+class ViT_L_16(VisionTransformer):
+    """ViT_L_16
+
+    :param **kwargs: Additional keyword arguments passed on to [``VisionTransformer``][inferno.models.VisionTransformer].
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            patch_size=16,
+            num_layers=24,
+            num_heads=16,
+            hidden_dim=1024,
+            mlp_dim=4096,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        weights: torchvision.models.Weights = torchvision.models.ViT_L_16_Weights.DEFAULT,
+        freeze: bool = False,
+        *args,
+        **kwargs,
+    ):
+        return super().from_pretrained_weights(
+            out_size=out_size,
+            architecture=architecture,
+            weights=weights,
+            freeze=freeze,
+            *args,
+            **kwargs,
+        )
+
+
+class ViT_L_32(VisionTransformer):
+    """ViT_L_32
+
+    :param **kwargs: Additional keyword arguments passed on to [``VisionTransformer``][inferno.models.VisionTransformer].
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            patch_size=32,
+            num_layers=24,
+            num_heads=16,
+            hidden_dim=1024,
+            mlp_dim=4096,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        weights: torchvision.models.Weights = torchvision.models.ViT_L_32_Weights.DEFAULT,
+        freeze: bool = False,
+        *args,
+        **kwargs,
+    ):
+        return super().from_pretrained_weights(
+            out_size=out_size,
+            architecture=architecture,
+            weights=weights,
+            freeze=freeze,
+            *args,
+            **kwargs,
+        )
+
+
+class ViT_H_14(VisionTransformer):
+    """ViT_H_14
+
+    :param **kwargs: Additional keyword arguments passed on to [``VisionTransformer``][inferno.models.VisionTransformer].
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            patch_size=14,
+            num_layers=32,
+            num_heads=16,
+            hidden_dim=1280,
+            mlp_dim=5120,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_pretrained_weights(
+        cls,
+        out_size: int,
+        architecture: Literal["imagenet", "cifar"] = "imagenet",
+        weights: torchvision.models.Weights = torchvision.models.ViT_H_14_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,

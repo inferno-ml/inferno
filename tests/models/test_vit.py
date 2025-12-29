@@ -16,13 +16,13 @@ import pytest
     [
         (
             inferno.models.VisionTransformer(
-                image_size=32,
+                in_size=32,
                 patch_size=2,
                 num_layers=2,
                 num_heads=2,
                 hidden_dim=10,
                 mlp_dim=10,
-                num_classes=5,
+                out_size=5,
                 representation_size=7,
                 cov=None,
             ),
@@ -103,13 +103,11 @@ def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
         out_size=out_size,
         architecture=architecture,
         cov=None,
-        image_size=32 if architecture == "cifar" else 224,
     )
     model = vit_type(
-        num_classes=out_size,
-        architecture=architecture,
+        in_size=32 if architecture == "cifar" else 224,
+        out_size=out_size,
         cov=cov,
-        image_size=32 if architecture == "cifar" else 224,
     )
 
     model.load_state_dict(deterministic_model.state_dict(), strict=False)
@@ -138,13 +136,13 @@ def test_draw_samples():
 
     # Create a VisionTransformer model
     model = inferno.models.VisionTransformer(
-        image_size=224,
+        in_size=224,
         patch_size=16,
         num_layers=2,
         num_heads=2,
         hidden_dim=128,
         mlp_dim=10,
-        num_classes=1000,
+        out_size=1000,
         cov=params.LowRankCovariance(10),
     )
 
@@ -233,7 +231,6 @@ def test_from_pretrained_weights(
         architecture=architecture,
         cov=cov,
         freeze=freeze,
-        image_size=32 if architecture == "cifar" else 224,
     )
 
     pretrained_weights_state_dict = weights.get_state_dict()

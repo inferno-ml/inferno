@@ -348,7 +348,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
     def __init__(
         self,
-        image_size: int,
+        in_size: int,
         patch_size: int,
         num_layers: int,
         num_heads: int,
@@ -356,11 +356,10 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         mlp_dim: int,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
-        num_classes: int = 1000,
+        out_size: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
         conv_stem_configs: Optional[list[ConvStemConfig]] = None,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance
@@ -372,15 +371,15 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         super().__init__(parametrization=parametrization)
         _log_api_usage_once(self)
         torch._assert(
-            image_size % patch_size == 0, "Input shape indivisible by patch size!"
+            in_size % patch_size == 0, "Input shape indivisible by patch size!"
         )
-        self.image_size = image_size
+        self.in_size = in_size
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
         self.mlp_dim = mlp_dim
         self.attention_dropout = attention_dropout
         self.dropout = dropout
-        self.num_classes = num_classes
+        self.out_size = out_size
         self.representation_size = representation_size
         self.norm_layer = norm_layer
 
@@ -427,7 +426,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 layer_type="input",
             )
 
-        seq_length = (image_size // patch_size) ** 2
+        seq_length = (in_size // patch_size) ** 2
 
         # Add a class token
         self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
@@ -451,7 +450,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         if representation_size is None:
             heads_layers["head"] = bnn.Linear(
                 hidden_dim,
-                num_classes,
+                out_size,
                 parametrization=parametrization,
                 cov=cov["head"],
                 layer_type="output",
@@ -467,7 +466,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             heads_layers["act"] = nn.Tanh()
             heads_layers["head"] = bnn.Linear(
                 representation_size,
-                num_classes,
+                out_size,
                 parametrization=parametrization,
                 cov=cov["head"],
                 layer_type="output",
@@ -546,7 +545,12 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             del pretrained_weights["heads.head.bias"]
 
         # Model
-        model = cls(*args, **kwargs, num_classes=out_size, architecture=architecture)
+        model = cls(
+            *args,
+            **kwargs,
+            in_size=32 if architecture == "cifar" else 224,
+            out_size=out_size,
+        )
         missing_keys, unexpected_keys = model.load_state_dict(
             pretrained_weights, strict=False
         )
@@ -577,12 +581,12 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         p = self.patch_size
         torch._assert(
-            h == self.image_size,
-            f"Wrong image height! Expected {self.image_size} but got {h}!",
+            h == self.in_size,
+            f"Wrong image height! Expected {self.in_size} but got {h}!",
         )
         torch._assert(
-            w == self.image_size,
-            f"Wrong image width! Expected {self.image_size} but got {w}!",
+            w == self.in_size,
+            f"Wrong image width! Expected {self.in_size} but got {w}!",
         )
         n_h = h // p
         n_w = w // p

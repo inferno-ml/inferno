@@ -1,4 +1,6 @@
+from collections.abc import MutableMapping
 import copy
+import itertools
 
 import torch
 from torch import nn, testing
@@ -278,3 +280,177 @@ def test_from_pretrained_weights(
                     continue
 
                 assert not param.requires_grad, name
+
+
+@pytest.mark.parametrize(
+    "cov,cov_is_correct",
+    [
+        (None, True),
+        (params.DiagonalCovariance(), True),
+        (
+            {
+                "conv_proj": None,
+                "encoder": params.LowRankCovariance(2),
+                "heads.pre_logits": params.DiagonalCovariance(),
+                "heads.head": params.KroneckerCovariance(),
+            },
+            True,
+        ),
+        (
+            {
+                "conv_proj": params.DiagonalCovariance(),
+                "encoder": {
+                    "layers.encoder_layer_0": params.LowRankCovariance(2),
+                    "layers.encoder_layer_1": params.DiagonalCovariance(),
+                },
+                "heads.pre_logits": params.DiagonalCovariance(),
+            },
+            True,
+        ),
+        (
+            {
+                "conv_proj": params.DiagonalCovariance(),
+                "encoder": {
+                    "layers.encoder_layer_0": params.LowRankCovariance(2),
+                    "layers.encoder_layer_1": {
+                        "self_attention": params.DiagonalCovariance()
+                    },
+                },
+                "heads.pre_logits": params.KroneckerCovariance(),
+                "heads.head": params.DiagonalCovariance(),
+            },
+            True,
+        ),
+        (
+            {
+                "conv_proj": params.DiagonalCovariance(),
+                "encoder": {
+                    "layers.encoder_layer_0": params.LowRankCovariance(2),
+                    "layers.encoder_layer_1": {
+                        "self_attention": {
+                            "q": params.KroneckerCovariance(),
+                            "k": params.DiagonalCovariance(),
+                            "v": params.LowRankCovariance(2),
+                            "out": params.DiagonalCovariance(),
+                        }
+                    },
+                },
+                "heads.pre_logits": params.KroneckerCovariance(),
+                "heads.head": params.DiagonalCovariance(),
+            },
+            True,
+        ),
+        (
+            {
+                "conv_proj": None,
+                "encoder": params.LowRankCovariance(2),
+                "pre_logits": params.DiagonalCovariance(),
+                "head": params.KroneckerCovariance(),
+            },
+            False,
+        ),
+    ],
+)
+def test_covariance_spec(cov, cov_is_correct):
+    """Test whether the covariance can be specified in various ways."""
+    torch.manual_seed(0)
+
+    if not cov_is_correct:
+        with pytest.raises(ValueError):
+            model = inferno.models.VisionTransformer(
+                in_size=32,
+                patch_size=2,
+                num_layers=2,
+                num_heads=2,
+                hidden_dim=10,
+                mlp_dim=10,
+                out_size=5,
+                representation_size=7,
+                cov=cov,
+            )
+    else:
+        model = inferno.models.VisionTransformer(
+            in_size=32,
+            patch_size=2,
+            num_layers=2,
+            num_heads=2,
+            hidden_dim=10,
+            mlp_dim=10,
+            out_size=5,
+            representation_size=7,
+            cov=cov,
+        )
+
+        # case 1: no covariance
+        if cov is None:
+            for name, module in model.named_modules():
+                # decide if it's a covariance based on name
+                name_postfix = ".".join(name.split(".")[-2:])
+                if name_postfix == "params.cov":
+                    assert module is None
+
+        # case 2: constant type
+        elif isinstance(cov, params.FactorizedCovariance):
+            for name, module in model.named_modules():
+                # decide if it's a covariance based on name
+                name_postfix = ".".join(name.split(".")[-2:])
+                if name_postfix == "params.cov":
+                    assert isinstance(module, type(cov))
+
+        # case 3: dictionary, possibly nested
+        elif isinstance(cov, dict):
+
+            # helper function to flatten the tree of covariances
+            def flatten_dict(dictionary, parent_key=""):
+                items = []
+                for key, value in dictionary.items():
+                    new_key = parent_key + "." + key if parent_key else key
+                    if isinstance(value, MutableMapping):
+                        items.extend(flatten_dict(value, new_key).items())
+                    else:
+                        items.append((new_key, value))
+                return dict(items)
+
+            _cov_flat = flatten_dict(cov)
+
+            # hack to fix naming inconsistency in attention
+            # e.g., model name is "q_proj" but covariance must be specified as "q"
+            cov_flat = {}
+            for key in _cov_flat.keys():
+                for old, new in [
+                    ("self_attention.q", "self_attention.q_proj"),
+                    ("self_attention.k", "self_attention.k_proj"),
+                    ("self_attention.v", "self_attention.v_proj"),
+                    ("self_attention.out", "self_attention.out_proj"),
+                ]:
+                    new_key = key.replace(old, new, 1)
+                    cov_flat[new_key] = _cov_flat[key]
+
+            for name, module in model.named_modules():
+                # decide if it's a covariance based on name
+                name_postfix = ".".join(name.split(".")[-2:])
+                if name_postfix == "params.cov":
+                    name_prefix = ".".join(name.split(".")[:-2])
+
+                    # keep looking until you find a match (ie, covariance could be specified by parent module)
+                    name_prefixes = list(
+                        itertools.accumulate(
+                            name_prefix.split("."), lambda x, y: x + "." + y
+                        )
+                    )
+
+                    found_match = False
+                    for name_prefix in reversed(name_prefixes):
+
+                        # look up specified covariance type
+                        if name_prefix in cov_flat.keys():
+                            spec_cov_type = type(cov_flat[name_prefix])
+                            if spec_cov_type is None:
+                                assert module is None
+                            else:
+                                assert isinstance(module, spec_cov_type)
+                            found_match = True
+                            break
+
+                    if not found_match:
+                        assert module is None

@@ -9,11 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
 import torch
 import torch.nn as nn
 import torchvision
-from torchvision.models._api import Weights, WeightsEnum
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from torchvision.models._utils import _ovewrite_named_param, handle_legacy_interface
-from torchvision.ops.misc import MLP, Conv2dNormActivation
-from torchvision.transforms._presets import ImageClassification, InterpolationMode
+from torchvision.ops.misc import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
 from .. import bnn
@@ -145,7 +141,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
-    ):
+    ) -> Float[Tensor, "*sample *batch *out_feature"]:
         x = self.ln_1(input)
         x = self.self_attention(
             x,
@@ -192,7 +188,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         ) = None,
     ):
         super().__init__()
-        cov = check_cov(cov, [f"encoder_layer_{i}" for i in range(num_layers)])
+        cov = check_cov(cov, [f"layers.encoder_layer_{i}" for i in range(num_layers)])
 
         # Note that batch_size is on the first dim because
         # we have batch_first=True in nn.MultiAttention() by default
@@ -210,7 +206,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
                 attention_dropout,
                 norm_layer,
                 parametrization=parametrization,
-                cov=cov[f"encoder_layer_{i}"],
+                cov=cov[f"layers.encoder_layer_{i}"],
             )
         self.layers = bnn.Sequential(layers)
         self.ln = norm_layer(hidden_dim)
@@ -223,7 +219,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
-    ):
+    ) -> Float[Tensor, "*sample *batch *out_feature"]:
         num_sample_dims = 0 if sample_shape is None else len(sample_shape)
 
         if sample_shape is not None:
@@ -292,7 +288,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 "See also: https://pytorch.org/docs/stable/func.batch_norm.html#patching-batch-norm."
             )
         self.norm_layer = norm_layer
-        cov = check_cov(cov, ["conv_proj", "encoder", "pre_logits", "head"])
+        cov = check_cov(cov, ["conv_proj", "encoder", "heads.pre_logits", "heads.head"])
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
@@ -359,7 +355,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 hidden_dim,
                 out_size,
                 parametrization=parametrization,
-                cov=cov["head"],
+                cov=cov["heads.head"],
                 layer_type="output",
             )
         else:
@@ -367,7 +363,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 hidden_dim,
                 representation_size,
                 parametrization=parametrization,
-                cov=cov["pre_logits"],
+                cov=cov["heads.pre_logits"],
                 layer_type="hidden",
             )
             heads_layers["act"] = nn.Tanh()
@@ -375,7 +371,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 representation_size,
                 out_size,
                 parametrization=parametrization,
-                cov=cov["head"],
+                cov=cov["heads.head"],
                 layer_type="output",
             )
 
@@ -528,7 +524,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         generator: torch.Generator | None = None,
         input_contains_samples: bool = False,
         parameter_samples: dict[str, Float[Tensor, "*sample parameter"]] | None = None,
-    ):
+    ) -> Float[Tensor, "*sample *batch *out_feature"]:
         num_sample_dims = 0 if sample_shape is None else len(sample_shape)
 
         # Reshape and permute the input tensor
@@ -790,7 +786,13 @@ def check_cov(
     elif isinstance(cov, params.FactorizedCovariance):
         cov = {key: copy.deepcopy(cov) for key in required_cov_keys}
     elif isinstance(cov, dict):
-        # default cov is None
+
+        # check for unexpected covs
+        for key in cov.keys():
+            if key not in required_cov_keys:
+                raise ValueError(f"Covariance key {key} not recognized")
+
+        # set missing covs to default value (None)
         for key in required_cov_keys:
             if key not in cov.keys():
                 cov[key] = None

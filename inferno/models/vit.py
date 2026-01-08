@@ -14,11 +14,11 @@ from torchvision.utils import _log_api_usage_once
 
 from .. import bnn
 from ..bnn import params
-from ..models import MLP
 from ..bnn.modules.bnn_mixin import (
-    reset_parameters_of_torch_module,
     parameters_and_lrs_of_torch_module,
+    reset_parameters_of_torch_module,
 )
+from ..models import MLP
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -56,12 +56,6 @@ class MLPBlock(MLP):
             parametrization=parametrization,
             cov=cov,
         )
-
-        for m in self.modules():
-            if isinstance(m, bnn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.normal_(m.bias, std=1e-6)
 
     def _load_from_state_dict(
         self,
@@ -450,40 +444,8 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         self.heads = bnn.Sequential(heads_layers)
 
-        if isinstance(self.conv_proj, bnn.Conv2d):
-            # Init the patchify stem
-            fan_in = (
-                self.conv_proj.in_channels
-                * self.conv_proj.kernel_size[0]
-                * self.conv_proj.kernel_size[1]
-            )
-            nn.init.trunc_normal_(self.conv_proj.weight, std=math.sqrt(1 / fan_in))
-            if self.conv_proj.bias is not None:
-                nn.init.zeros_(self.conv_proj.bias)
-        elif self.conv_proj.conv_last is not None and isinstance(
-            self.conv_proj.conv_last, nn.Conv2d
-        ):
-            # Init the last 1x1 conv of the conv stem
-            nn.init.normal_(
-                self.conv_proj.conv_last.weight,
-                mean=0.0,
-                std=math.sqrt(2.0 / self.conv_proj.conv_last.out_channels),
-            )
-            if self.conv_proj.conv_last.bias is not None:
-                nn.init.zeros_(self.conv_proj.conv_last.bias)
-
-        if hasattr(self.heads, "pre_logits") and isinstance(
-            self.heads.pre_logits, bnn.Linear
-        ):
-            fan_in = self.heads.pre_logits.in_features
-            nn.init.trunc_normal_(
-                self.heads.pre_logits.weight, std=math.sqrt(1 / fan_in)
-            )
-            nn.init.zeros_(self.heads.pre_logits.bias)
-
-        if isinstance(self.heads.head, bnn.Linear):
-            nn.init.zeros_(self.heads.head.weight)
-            nn.init.zeros_(self.heads.head.bias)
+        # Reset parameters (note this replaces torchvision initialization)
+        self.reset_parameters()
 
     @classmethod
     def from_pretrained_weights(

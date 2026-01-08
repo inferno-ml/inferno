@@ -73,30 +73,30 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
 @pytest.mark.parametrize(
     "vit_type,out_size,architecture,cov",
     [
-        # (
-        #    inferno.models.ViT_B_16,
-        #    10,
-        #    "cifar",
-        #    params.LowRankCovariance(10),
-        # ),
+        (
+            inferno.models.ViT_B_16,
+            10,
+            "cifar",
+            params.LowRankCovariance(2),
+        ),
         (
             inferno.models.ViT_B_16,
             1000,
             "imagenet",
             params.LowRankCovariance(2),
         ),
-        # (
-        #    inferno.models.ResNet18,v
-        #    100,
-        #    "cifar",
-        #    params.LowRankCovariance(10),
-        # ),
-        # (
-        #    inferno.models.ResNet18,
-        #    200,
-        #    "imagenet",
-        #    params.LowRankCovariance(10),
-        # ),
+        (
+            inferno.models.ViT_B_16,
+            100,
+            "cifar",
+            params.LowRankCovariance(2),
+        ),
+        (
+            inferno.models.ViT_B_16,
+            200,
+            "imagenet",
+            params.LowRankCovariance(2),
+        ),
     ],
 )
 def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
@@ -197,25 +197,25 @@ def test_batch_norm_raises_value_error():
             torchvision.models.ViT_B_16_Weights.DEFAULT,
             100,
             "cifar",
-            params.LowRankCovariance(10),
+            params.LowRankCovariance(1),
             True,
         ),
-        # (
-        #    inferno.models.ResNet18,
-        #    torchvision.models.ResNet18_Weights.DEFAULT,
-        #    200,
-        #    "imagenet",
-        #    None,
-        #    False,
-        # ),
-        # (
-        #    inferno.models.ResNet34,
-        #    torchvision.models.ResNet34_Weights.DEFAULT,
-        #    1000,
-        #    "imagenet",
-        #    params.LowRankCovariance(100),
-        #    True,
-        # ),
+        (
+            inferno.models.ViT_B_16,
+            torchvision.models.ViT_B_16_Weights.DEFAULT,
+            200,
+            "imagenet",
+            None,
+            False,
+        ),
+        (
+            inferno.models.ViT_B_32,
+            torchvision.models.ViT_B_32_Weights.DEFAULT,
+            1000,
+            "imagenet",
+            params.LowRankCovariance(1),
+            True,
+        ),
     ],
 )
 def test_from_pretrained_weights(

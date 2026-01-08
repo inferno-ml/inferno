@@ -1,3 +1,9 @@
+"""Vision Transformers.
+
+This implementation largely follows
+[``torchvision.models.vision_transformer``](https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py#L536).
+"""
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -12,13 +18,13 @@ import torchvision
 from torchvision.ops.misc import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
+from . import MLP
 from .. import bnn
 from ..bnn import params
 from ..bnn.modules.bnn_mixin import (
     parameters_and_lrs_of_torch_module,
     reset_parameters_of_torch_module,
 )
-from ..models import MLP
 
 if TYPE_CHECKING:
     from jaxtyping import Float

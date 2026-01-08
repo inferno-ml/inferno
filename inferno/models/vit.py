@@ -450,26 +450,26 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
         weights: torchvision.models.Weights,
         freeze: bool = False,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         *args,
         **kwargs,
     ):
         """Load a VisionTransformer model with pretrained weights.
 
-        Depending on the ``out_size`` and ``architecture`` parameters, the first and last
+        Depending on the ``in_size`` and ``out_size`` parameters, the first and last
         layers of the model are not initialized with the pretrained weights.
 
+        :param in_size: Size of the input (i.e. image size).
         :param out_size: Size of the output (i.e. number of classes).
         :param weights: Pretrained weights to use.
         :param freeze: Whether to freeze the pretrained weights.
-        :param architecture: Type of VisionTransformer architecture. Either "imagenet" or "cifar".
         """
         # Load and preprocess the pretrained weights
         pretrained_weights = weights.get_state_dict(progress=True)
-        if architecture != "imagenet":
+        if in_size != 224:
             # Remove the first layer (conv_proj) from the pretrained weights
             del pretrained_weights["conv_proj.weight"]
             del pretrained_weights["conv_proj.bias"]
@@ -486,7 +486,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         model = cls(
             *args,
             **kwargs,
-            in_size=32 if architecture == "cifar" else 224,
+            in_size=in_size,
             out_size=out_size,
         )
         missing_keys, unexpected_keys = model.load_state_dict(
@@ -676,16 +676,16 @@ class ViT_B_16(VisionTransformer):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_B_16_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,
     ):
         return super().from_pretrained_weights(
+            in_size=in_size,
             out_size=out_size,
-            architecture=architecture,
             weights=weights,
             freeze=freeze,
             *args,
@@ -717,16 +717,16 @@ class ViT_B_32(VisionTransformer):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_B_32_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,
     ):
         return super().from_pretrained_weights(
+            in_size=in_size,
             out_size=out_size,
-            architecture=architecture,
             weights=weights,
             freeze=freeze,
             *args,
@@ -758,16 +758,16 @@ class ViT_L_16(VisionTransformer):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_L_16_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,
     ):
         return super().from_pretrained_weights(
+            in_size=in_size,
             out_size=out_size,
-            architecture=architecture,
             weights=weights,
             freeze=freeze,
             *args,
@@ -799,16 +799,16 @@ class ViT_L_32(VisionTransformer):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_L_32_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,
     ):
         return super().from_pretrained_weights(
+            in_size=in_size,
             out_size=out_size,
-            architecture=architecture,
             weights=weights,
             freeze=freeze,
             *args,
@@ -840,16 +840,16 @@ class ViT_H_14(VisionTransformer):
     @classmethod
     def from_pretrained_weights(
         cls,
+        in_size: int,
         out_size: int,
-        architecture: Literal["imagenet", "cifar"] = "imagenet",
         weights: torchvision.models.Weights = torchvision.models.ViT_H_14_Weights.DEFAULT,
         freeze: bool = False,
         *args,
         **kwargs,
     ):
         return super().from_pretrained_weights(
+            in_size=in_size,
             out_size=out_size,
-            architecture=architecture,
             weights=weights,
             freeze=freeze,
             *args,

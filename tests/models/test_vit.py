@@ -103,8 +103,8 @@ def test_sample_shape_none_corresponds_to_forward_pass_with_mean_params(
     vit_type, out_size, architecture, cov
 ):
     deterministic_model = vit_type.from_pretrained_weights(
+        in_size=32 if architecture == "cifar" else 224,
         out_size=out_size,
-        architecture=architecture,
         cov=None,
     )
     model = vit_type(
@@ -225,9 +225,9 @@ def test_from_pretrained_weights(
     torch.manual_seed(0)
 
     pretrained_model = vit_type.from_pretrained_weights(
-        weights=weights,
+        in_size=32 if architecture == "cifar" else 224,
         out_size=out_size,
-        architecture=architecture,
+        weights=weights,
         cov=cov,
         freeze=freeze,
     )

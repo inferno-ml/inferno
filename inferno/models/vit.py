@@ -15,6 +15,10 @@ from torchvision.utils import _log_api_usage_once
 from .. import bnn
 from ..bnn import params
 from ..models import MLP
+from ..bnn.modules.bnn_mixin import (
+    reset_parameters_of_torch_module,
+    parameters_and_lrs_of_torch_module,
+)
 
 if TYPE_CHECKING:
     from jaxtyping import Float
@@ -210,6 +214,58 @@ class Encoder(bnn.BNNMixin, nn.Module):
             )
         self.layers = bnn.Sequential(layers)
         self.ln = norm_layer(hidden_dim)
+
+    def reset_parameters(self) -> None:
+        """Reset the parameters of the module and set the parametrization of all children
+        to the parametrization of the module.
+
+        Needs to be implemented because Encoder has direct parameters.
+        """
+
+        # direct parameters
+        nn.init.normal_(self.pos_embedding, mean=0, std=0.02)  # from BERT
+
+        # child modules
+        self.layers.parametrization = self.parametrization
+        self.layers.reset_parameters()
+
+        reset_parameters_of_torch_module(self.ln, parametrization=self.parametrization)
+
+    def parameters_and_lrs(
+        self,
+        lr: float,
+        optimizer: Literal["SGD", "Adam"],
+    ) -> list[dict[str, Tensor | float]]:
+        """Get the parameters of the module and their learning rates for the chosen optimizer
+        and the parametrization of the module.
+
+        Needs to be implemented because Encoder has direct parameters.
+
+        :param lr: The global learning rate.
+        :param optimizer: The optimizer being used.
+        """
+
+        param_groups = []
+
+        # direct parameters
+        param_groups += [
+            {
+                "name": "pos_embedding",
+                "params": [self.pos_embedding],
+                "lr": lr,
+            }
+        ]
+
+        # child modules
+        param_groups += self.layers.parameters_and_lrs(lr=lr, optimizer=optimizer)
+        param_groups += parameters_and_lrs_of_torch_module(
+            self.ln,
+            lr=lr,
+            parametrization=self.parametrization,
+            optimizer=optimizer,
+        )
+
+        return param_groups
 
     def forward(
         self,
@@ -482,6 +538,57 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                     param.requires_grad = False
 
         return model
+
+    def reset_parameters(self) -> None:
+        """Reset the parameters of the module and set the parametrization of all children
+        to the parametrization of the module.
+
+        Needs to be implemented because VisionTransformer has direct parameters.
+        """
+
+        # direct parameters
+        nn.init.zeros_(self.class_token)
+
+        # child modules
+        self.conv_proj.parametrization = self.parametrization
+        self.encoder.parametrization = self.parametrization
+        self.heads.parametrization = self.parametrization
+
+        self.conv_proj.reset_parameters()
+        self.encoder.reset_parameters()
+        self.heads.reset_parameters()
+
+    def parameters_and_lrs(
+        self,
+        lr: float,
+        optimizer: Literal["SGD", "Adam"],
+    ) -> list[dict[str, Tensor | float]]:
+        """Get the parameters of the module and their learning rates for the chosen optimizer
+        and the parametrization of the module.
+
+        Needs to be implemented because VisionTransformer has direct parameters.
+
+        :param lr: The global learning rate.
+        :param optimizer: The optimizer being used.
+        """
+
+        param_groups = []
+
+        # direct parameters
+        param_groups += [
+            {
+                "name": "class_token",
+                "params": [self.class_token],
+                "lr": lr,
+            }
+        ]
+
+        # child modules
+        param_groups += self.conv_proj.parameters_and_lrs(lr=lr, optimizer=optimizer)
+        param_groups += self.encoder.parameters_and_lrs(lr=lr, optimizer=optimizer)
+        param_groups += self.heads.parameters_and_lrs(lr=lr, optimizer=optimizer)
+
+        return param_groups
 
     def _process_input(
         self,

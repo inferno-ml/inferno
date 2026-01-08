@@ -883,3 +883,17 @@ def check_cov(
             if key not in cov.keys():
                 cov[key] = None
     return cov
+
+
+def last_layer_cov(cov: params.FactorizedCovariance, num_layers: int):
+    """Returns a dictionary of covariances that specifies a covariance
+    in the conv_proj layer, the last encoder layer (mlp and attention), and last output layer.
+
+    :param cov: covariance to use in all last layers
+    :param num_layers: number of layers in the VisionTransformer
+    """
+    return {
+        "conv_proj": copy.deepcopy(cov),
+        "encoder": {f"layers.encoder_layer_{num_layers-1}": copy.deepcopy(cov)},
+        "heads.head": copy.deepcopy(cov),
+    }

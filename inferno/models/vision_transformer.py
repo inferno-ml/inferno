@@ -31,12 +31,6 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 
-class ConvStemConfig(NamedTuple):
-    out_channels: int
-    kernel_size: int
-    stride: int
-    norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d
-    activation_layer: Callable[..., nn.Module] = nn.ReLU
 
 
 class MLPBlock(MLP):
@@ -369,28 +363,6 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 "conv_stem_configs currently not supported in inferno "
                 "because there is no Conv2dNormActivation implementation."
             )
-            seq_proj = nn.Sequential()
-            prev_channels = 3
-            for i, conv_stem_layer_config in enumerate(conv_stem_configs):
-                seq_proj.add_module(
-                    f"conv_bn_relu_{i}",
-                    Conv2dNormActivation(
-                        in_channels=prev_channels,
-                        out_channels=conv_stem_layer_config.out_channels,
-                        kernel_size=conv_stem_layer_config.kernel_size,
-                        stride=conv_stem_layer_config.stride,
-                        norm_layer=conv_stem_layer_config.norm_layer,
-                        activation_layer=conv_stem_layer_config.activation_layer,
-                    ),
-                )
-                prev_channels = conv_stem_layer_config.out_channels
-            seq_proj.add_module(
-                "conv_last",
-                nn.Conv2d(
-                    in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1
-                ),
-            )
-            self.conv_proj: nn.Module = seq_proj
         else:
             self.conv_proj = bnn.Conv2d(
                 in_channels=3,

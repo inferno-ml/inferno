@@ -1,7 +1,7 @@
 """Vision Transformers.
 
 This implementation largely follows
-[``torchvision.models.vision_transformer``](https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py#L536).
+[``torchvision.models.vision_transformer``](https://github.com/pytorch/vision/blob/1e53952f57462e4c28103835cf1f9e504dbea84b/torchvision/models/vision_transformer.py#L536).
 """
 
 from __future__ import annotations

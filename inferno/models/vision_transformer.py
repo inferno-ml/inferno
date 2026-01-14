@@ -31,8 +31,6 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 
-
-
 class MLPBlock(MLP):
     """Transformer MLP block."""
 
@@ -107,7 +105,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
     ):
         super().__init__()
         self.num_heads = num_heads
-        cov = check_cov(cov, ["self_attention", "mlp"])
+        cov = _check_cov(cov, ["self_attention", "mlp"])
 
         # Attention block
         self.ln_1 = norm_layer(hidden_dim)
@@ -186,7 +184,7 @@ class Encoder(bnn.BNNMixin, nn.Module):
         ) = None,
     ):
         super().__init__()
-        cov = check_cov(cov, [f"layers.encoder_layer_{i}" for i in range(num_layers)])
+        cov = _check_cov(cov, [f"layers.encoder_layer_{i}" for i in range(num_layers)])
 
         # Note that batch_size is on the first dim because
         # we have batch_first=True in nn.MultiAttention() by default
@@ -355,7 +353,9 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
                 "See also: https://pytorch.org/docs/stable/func.batch_norm.html#patching-batch-norm."
             )
         self.norm_layer = norm_layer
-        cov = check_cov(cov, ["conv_proj", "encoder", "heads.pre_logits", "heads.head"])
+        cov = _check_cov(
+            cov, ["conv_proj", "encoder", "heads.pre_logits", "heads.head"]
+        )
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
@@ -835,7 +835,7 @@ class ViT_H_14(VisionTransformer):
         )
 
 
-def check_cov(
+def _check_cov(
     cov: params.FactorizedCovariance | dict[str, Any] | None,
     required_cov_keys: list[str],
 ):

@@ -237,14 +237,10 @@ def test_from_pretrained_weights(
     testing.assert_close(
         pretrained_model.state_dict()[
             "encoder.layers.encoder_layer_0.self_attention.out_proj.params.weight"
-        ]
-        .detach()
-        .numpy(),
+        ],
         pretrained_weights_state_dict[
             "encoder.layers.encoder_layer_0.self_attention.out_proj.weight"
-        ]
-        .detach()
-        .numpy(),
+        ],
         rtol=1e-5,
         atol=1e-5,
     )
@@ -252,14 +248,10 @@ def test_from_pretrained_weights(
     testing.assert_close(
         pretrained_model.state_dict()[
             "encoder.layers.encoder_layer_1.self_attention.out_proj.params.weight"
-        ]
-        .detach()
-        .numpy(),
+        ],
         pretrained_weights_state_dict[
             "encoder.layers.encoder_layer_1.self_attention.out_proj.weight"
-        ]
-        .detach()
-        .numpy(),
+        ],
         rtol=1e-5,
         atol=1e-5,
     )

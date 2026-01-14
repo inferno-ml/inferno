@@ -297,18 +297,18 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
     """Vision Transformer as per https://arxiv.org/abs/2010.11929.
 
     :param in_size: Size of the input (i.e. image size).
-    :param patch_size: Size of the patch
-    :param num_layers: Number of layers in the encoder
-    :param num_heads: Number of heads
-    :param hidden_dim: Hidden size in encoder
-    :param mlp_dim: Dimension of MLP block
-    :param dropout: dropout probability, defaults to 0.0
-    :param attention_dropout: attention dropout probability, defaults to 0.0
+    :param patch_size: Size of the patch.
+    :param num_layers: Number of layers in the encoder.
+    :param num_heads: Number of heads.
+    :param hidden_dim: Hidden size in encoder.
+    :param mlp_dim: Dimension of MLP block.
+    :param dropout: Dropout probability.
+    :param attention_dropout: Attention dropout probability.
     :param out_size: Size of the output (i.e. number of classes).
-    :param representation_size: size of pre-logits layer before output head
+    :param representation_size: Size of pre-logits layer before output head.
     :param norm_layer:  Normalization layer to use.
-    :param conv_stem_configs: currently not supported in inferno ViT
-    :param parametrization: he parametrization to use. Defines the initialization
+    :param conv_stem_configs: Currently not supported.
+    :param parametrization: The parametrization to use. Defines the initialization
         and learning rate scaling for the parameters of the module.
     :param cov: Covariance structure of the probabilistic layers.
     """
@@ -486,10 +486,10 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         Needs to be implemented because VisionTransformer has direct parameters.
         """
 
-        # direct parameters
+        # Direct parameters
         nn.init.zeros_(self.class_token)
 
-        # child modules
+        # Child modules
         self.conv_proj.parametrization = self.parametrization
         self.encoder.parametrization = self.parametrization
         self.heads.parametrization = self.parametrization
@@ -514,7 +514,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
 
         param_groups = []
 
-        # direct parameters
+        # Direct parameters
         param_groups += [
             {
                 "name": "class_token",
@@ -523,7 +523,7 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
             }
         ]
 
-        # child modules
+        # Child modules
         param_groups += self.conv_proj.parameters_and_lrs(lr=lr, optimizer=optimizer)
         param_groups += self.encoder.parameters_and_lrs(lr=lr, optimizer=optimizer)
         param_groups += self.heads.parameters_and_lrs(lr=lr, optimizer=optimizer)

@@ -58,7 +58,6 @@ def test_same_as_torchvision_vit(inferno_vit, torchvision_vit):
         inferno_output = inferno_vit(input, sample_shape=(2,))[
             0
         ]  # Draw multiple samples to check batch compatibility
-        # inferno_output = inferno_vit(input)
         torchvision_output = torchvision_vit(input)
 
     # Compare the outputs

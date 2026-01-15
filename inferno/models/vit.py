@@ -156,7 +156,7 @@ class EncoderBlock(bnn.BNNMixin, nn.Module):
             y,
             sample_shape=sample_shape,
             generator=generator,
-            input_contains_samples=input_contains_samples,
+            input_contains_samples=True,
             parameter_samples=parameter_samples,
         )
         return x + y

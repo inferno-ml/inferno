@@ -294,10 +294,10 @@ class Encoder(bnn.BNNMixin, nn.Module):
 class VisionTransformer(bnn.BNNMixin, nn.Module):
     """Vision Transformer as per https://arxiv.org/abs/2010.11929.
 
-    The covariance can be specified as None (resulting in a non-stochastic model),
-    as an instance of inferno.params.FactorizedCovariance (resulting in the same covariance in all layers),
+    The covariance can be specified as ``None`` (resulting in a non-stochastic model),
+    as an instance of [``inferno.bnn.params.FactorizedCovariance``][] (resulting in the same covariance in all layers),
     or as a nested dictionary with the keys indicating the module. For example, the following will place
-    a low rank covariance in the conv_proj, the last layer of the encoder, and the output head:
+    a low rank covariance in the ``conv_proj``, the last layer of the encoder, and the output head:
     ```
     cov = params.LowRankCovariance(rank=2)
     last_layer_cov = {
@@ -325,8 +325,8 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         cov=last_layer_cov,
     )
     ```
-    Note that any modules omitted from the covariance specification will default to None
-    (in this example, any modules part of last_layer_cov["encoder"]["layers.encoder_layer_0"]).
+    Note that any modules omitted from the covariance specification will default to ``None``
+    (in this example, any modules part of ``last_layer_cov["encoder"]["layers.encoder_layer_0"]``).
 
     :param in_size: Size of the input (i.e. image size).
     :param patch_size: Size of the patch.

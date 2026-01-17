@@ -95,7 +95,11 @@ class MSELossVR(nn.modules.loss._Loss):
                     # which cov parameters correspond to the bias
                     input_representation = torch.cat(
                         (
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                             input_representation,
                         ),
                         dim=-1,
@@ -104,7 +108,11 @@ class MSELossVR(nn.modules.loss._Loss):
                     input_representation = torch.cat(
                         (
                             input_representation,
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                         ),
                         dim=-1,
                     )
@@ -200,7 +208,15 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
         # Logits of model with mean parameters
         mean_logits = output_layer(input_representation, sample_shape=None)
         mean_logits = torch.concatenate(
-            (torch.zeros_like(mean_logits), mean_logits), dim=-1
+            (
+                torch.zeros_like(
+                    mean_logits,
+                    dtype=mean_logits.dtype,
+                    device=mean_logits.device,
+                ),
+                mean_logits,
+            ),
+            dim=-1,
         )
 
         if output_layer.params.cov is not None:
@@ -215,7 +231,11 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
                     # which cov parameters correspond to the bias
                     input_representation = torch.cat(
                         (
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                             input_representation,
                         ),
                         dim=-1,
@@ -229,7 +249,11 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
                     input_representation = torch.cat(
                         (
                             input_representation,
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                         ),
                         dim=-1,
                     )
@@ -253,7 +277,15 @@ class BCEWithLogitsLossVR(nn.modules.loss._Loss):
             )
             # Add variance only to non-zero logits
             variance_term = torch.concatenate(
-                (torch.zeros_like(variance_term), variance_term), dim=-1
+                (
+                    torch.zeros_like(
+                        variance_term,
+                        dtype=variance_term.dtype,
+                        device=variance_term.device,
+                    ),
+                    variance_term,
+                ),
+                dim=-1,
             )
 
             # Compute loss
@@ -361,7 +393,11 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
                     # which cov parameters correspond to the bias
                     input_representation = torch.cat(
                         (
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                             input_representation,
                         ),
                         dim=-1,
@@ -375,7 +411,11 @@ class CrossEntropyLossVR(nn.modules.loss._Loss):
                     input_representation = torch.cat(
                         (
                             input_representation,
-                            torch.ones((*input_representation.shape[0:-1], 1)),
+                            torch.ones(
+                                (*input_representation.shape[0:-1], 1),
+                                dtype=input_representation.dtype,
+                                device=input_representation.device,
+                            ),
                         ),
                         dim=-1,
                     )

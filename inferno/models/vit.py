@@ -9,13 +9,11 @@ from __future__ import annotations
 from collections import OrderedDict
 import copy
 from functools import partial
-import math
-from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple
 
 import torch
 import torch.nn as nn
 import torchvision
-from torchvision.ops.misc import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
 from . import MLP

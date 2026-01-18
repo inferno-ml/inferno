@@ -356,9 +356,9 @@ class VisionTransformer(bnn.BNNMixin, nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         out_size: int = 1000,
-        representation_size: Optional[int] = None,
+        representation_size: int | None = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-        conv_stem_configs: Optional[list[ConvStemConfig]] = None,
+        conv_stem_configs: list[NamedTuple] | None = None,
         parametrization: params.Parametrization = params.MaximalUpdate(),
         cov: (
             params.FactorizedCovariance
